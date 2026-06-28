@@ -11,7 +11,7 @@ interface Props {
   revealInterior?: boolean
 }
 
-// Classic detached-house roof: brown-red roof tiles, deep eaves and a clean
+// Classic detached-house roof: dark-blue roof tiles, deep eaves and a clean
 // front gable. In interior mode the front gable fades out for a clear cutaway.
 export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: Props) {
   const half = width / 2
@@ -23,18 +23,18 @@ export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: 
     <group position={[cx, baseY, cz]}>
       <mesh position={[-half / 2, ridgeH / 2, 0]} rotation={[0, 0, angle]} castShadow receiveShadow>
         <boxGeometry args={[slope, 0.16, depth + 0.7]} />
-        <meshStandardMaterial color="#8a3b2e" roughness={0.86} />
-        <Edges threshold={15} color="#6a2e26" />
+        <meshStandardMaterial color="#2a3a5e" roughness={0.84} />
+        <Edges threshold={15} color="#1a2742" />
       </mesh>
       <mesh position={[half / 2, ridgeH / 2, 0]} rotation={[0, 0, -angle]} castShadow receiveShadow>
         <boxGeometry args={[slope, 0.16, depth + 0.7]} />
-        <meshStandardMaterial color="#9a4533" roughness={0.86} />
-        <Edges threshold={15} color="#6a2e26" />
+        <meshStandardMaterial color="#324570" roughness={0.84} />
+        <Edges threshold={15} color="#1a2742" />
       </mesh>
 
       <mesh position={[0, ridgeH + 0.06, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[0.11, 0.11, depth + 0.78, 18]} />
-        <meshStandardMaterial color="#6f3028" roughness={0.8} />
+        <meshStandardMaterial color="#1e2b47" roughness={0.78} />
       </mesh>
 
       {Array.from({ length: tileCount }, (_, i) => {
@@ -43,11 +43,11 @@ export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: 
           <group key={i}>
             <mesh position={[-half / 2, ridgeH / 2 + 0.095, z]} rotation={[0, 0, angle]} castShadow>
               <boxGeometry args={[slope * 0.96, 0.035, 0.055]} />
-              <meshStandardMaterial color="#743429" roughness={0.9} />
+              <meshStandardMaterial color="#233454" roughness={0.9} />
             </mesh>
             <mesh position={[half / 2, ridgeH / 2 + 0.095, z]} rotation={[0, 0, -angle]} castShadow>
               <boxGeometry args={[slope * 0.96, 0.035, 0.055]} />
-              <meshStandardMaterial color="#7f392d" roughness={0.9} />
+              <meshStandardMaterial color="#2b3f64" roughness={0.9} />
             </mesh>
           </group>
         )
@@ -69,7 +69,7 @@ export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: 
       </mesh>
       <mesh position={[width * 0.25, ridgeH * 1.2, -depth * 0.16]} castShadow>
         <boxGeometry args={[0.58, 0.14, 0.58]} />
-        <meshStandardMaterial color="#743028" roughness={0.78} />
+        <meshStandardMaterial color="#1e2b47" roughness={0.78} />
       </mesh>
     </group>
   )
