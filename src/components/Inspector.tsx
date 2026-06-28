@@ -11,7 +11,7 @@ const MODES: { id: ClimateMode; label: string; icon: string }[] = [
 ]
 
 export function Inspector() {
-  const { house, selectedId, view, setClimate, toggleSimple, updateRoom, removeRoom } = useHouse()
+  const { house, selectedId, view, daikin, applyClimate, bindDevice, toggleSimple, updateRoom, removeRoom } = useHouse()
 
   const device = house.devices.find((d) => d.id === selectedId)
   const room = house.rooms.find((r) => r.id === selectedId)
@@ -38,7 +38,7 @@ export function Inspector() {
             <p className="text-xs text-slate-400">Klimaanlage · {s.current.toFixed(1)}° aktuell</p>
           </div>
           <button
-            onClick={() => setClimate(device.id, { power: !s.power })}
+            onClick={() => applyClimate(device.id, { power: !s.power })}
             className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
               s.power ? 'bg-[var(--color-accent)] text-[#0b1020]' : 'bg-[var(--color-panel-2)] text-slate-400'
             }`}
@@ -50,7 +50,7 @@ export function Inspector() {
         {/* Target temperature dial */}
         <div className="mt-5 flex items-center justify-center gap-5">
           <button
-            onClick={() => setClimate(device.id, { target: Math.max(16, s.target - 0.5) })}
+            onClick={() => applyClimate(device.id, { target: Math.max(16, s.target - 0.5) })}
             className="h-10 w-10 rounded-full bg-[var(--color-panel-2)] text-xl leading-none hover:bg-[var(--color-line)]"
           >
             −
@@ -60,7 +60,7 @@ export function Inspector() {
             <div className="text-[11px] uppercase tracking-wide text-slate-400">Ziel</div>
           </div>
           <button
-            onClick={() => setClimate(device.id, { target: Math.min(30, s.target + 0.5) })}
+            onClick={() => applyClimate(device.id, { target: Math.min(30, s.target + 0.5) })}
             className="h-10 w-10 rounded-full bg-[var(--color-panel-2)] text-xl leading-none hover:bg-[var(--color-line)]"
           >
             +
@@ -72,7 +72,7 @@ export function Inspector() {
           {MODES.map((m) => (
             <button
               key={m.id}
-              onClick={() => setClimate(device.id, { mode: m.id })}
+              onClick={() => applyClimate(device.id, { mode: m.id })}
               className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[11px] transition ${
                 s.mode === m.id ? 'bg-[var(--color-accent)] text-[#0b1020]' : 'bg-[var(--color-panel-2)] text-slate-300'
               }`}
@@ -95,14 +95,43 @@ export function Inspector() {
             max={5}
             step={1}
             value={s.fan}
-            onChange={(e) => setClimate(device.id, { fan: Number(e.target.value) })}
+            onChange={(e) => applyClimate(device.id, { fan: Number(e.target.value) })}
             className="w-full accent-[var(--color-accent)]"
           />
         </div>
 
-        <p className="mt-4 rounded-lg bg-[var(--color-panel-2)] px-3 py-2 text-[11px] text-slate-400">
-          Mock-Modus · echte Daikin-Steuerung aktiv, sobald Onecta-Credentials hinterlegt sind.
-        </p>
+        {/* Daikin binding */}
+        <div className="mt-4 rounded-lg bg-[var(--color-panel-2)] px-3 py-2.5">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wide text-slate-400">Daikin-Gerät</span>
+            {device.binding?.adapter === 'onecta' ? (
+              <span className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-mint)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-mint)]" />
+                {daikin.busy === device.id ? 'sendet…' : 'live'}
+              </span>
+            ) : (
+              <span className="text-[11px] text-slate-500">Mock</span>
+            )}
+          </div>
+          {daikin.connected ? (
+            <select
+              value={device.binding?.adapter === 'onecta' ? device.binding.unitId : ''}
+              onChange={(e) => bindDevice(device.id, e.target.value || null)}
+              className="w-full rounded-md bg-[var(--color-panel)] px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+            >
+              <option value="">— Mock (nicht verbunden) —</option>
+              {daikin.units.map((u) => (
+                <option key={u.unitId} value={u.unitId}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              Mock-Modus. Verbinde Daikin unten, um diese Anlage einem echten Gerät zuzuordnen.
+            </p>
+          )}
+        </div>
       </div>
     )
   }

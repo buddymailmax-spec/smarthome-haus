@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, ContactShadows, Environment, SoftShadows, Bounds } from '@react-three/drei'
+import { OrbitControls, ContactShadows, SoftShadows, Bounds } from '@react-three/drei'
 import { useMemo } from 'react'
 import { useHouse } from '../state/houseStore'
 import { Room3D } from './Room3D'
@@ -28,10 +28,11 @@ export function House3D() {
       <fog attach="fog" args={['#0b1020', 28, 60]} />
       <SoftShadows size={28} samples={12} />
 
-      <ambientLight intensity={0.35} />
+      <ambientLight intensity={0.45} />
+      <hemisphereLight args={['#9db2ff', '#0b1020', 0.7]} />
       <directionalLight
         position={[center[0] + 8, 18, center[1] + 6]}
-        intensity={1.5}
+        intensity={2}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-25}
@@ -39,7 +40,7 @@ export function House3D() {
         shadow-camera-top={25}
         shadow-camera-bottom={-25}
       />
-      <Environment preset="city" />
+      <directionalLight position={[center[0] - 10, 8, center[1] - 8]} intensity={0.5} color="#5b8cff" />
 
       {/* Ground plane — click to deselect */}
       <mesh

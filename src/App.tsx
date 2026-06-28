@@ -1,10 +1,13 @@
 import { House3D } from './scene/House3D'
 import { Inspector } from './components/Inspector'
+import { DaikinPanel } from './components/DaikinPanel'
 import { useHouse } from './state/houseStore'
+import { useDaikinSync } from './daikin/useDaikinSync'
 import { isClimate } from './types'
 
 export default function App() {
   const { house, view, setView, addRoom } = useHouse()
+  useDaikinSync()
 
   const climates = house.devices.filter(isClimate)
   const activeClimates = climates.filter((c) => c.state.power).length
@@ -66,6 +69,7 @@ export default function App() {
         {/* Side panel */}
         <aside className="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto">
           <Inspector />
+          <DaikinPanel />
         </aside>
       </div>
     </div>
