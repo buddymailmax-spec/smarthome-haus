@@ -1,6 +1,4 @@
-import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
+import { useMemo } from 'react'
 import { Edges, Html, RoundedBox } from '@react-three/drei'
 import type { Device, Room } from '../types'
 import { isClimate } from '../types'
@@ -36,12 +34,13 @@ export function Floor3D({ level, rooms, devices, isTop, revealInterior }: Props)
     <group>
       {/* Floor slab */}
       <RoundedBox position={[bb.cx, baseY + 0.07, bb.cz]} args={[bb.w + 0.32, 0.14, bb.d + 0.32]} radius={0.025} smoothness={2} receiveShadow>
-        <meshStandardMaterial color={revealInterior ? '#f3efe7' : '#e6e1d8'} roughness={0.88} />
-        <Edges threshold={15} color={revealInterior ? '#ddd6ca' : '#c7c2ba'} />
+        <meshStandardMaterial color="#f3efe7" roughness={0.88} transparent opacity={revealInterior ? 1 : 0} depthWrite={revealInterior} />
+        {revealInterior && <Edges threshold={15} color="#ddd6ca" />}
       </RoundedBox>
 
       <ExteriorWalls bb={bb} wallY={wallY} wallH={wallH} level={level} isTop={!!isTop} revealInterior={revealInterior} />
       <InteriorWalls rooms={rooms} baseY={baseY} revealInterior={revealInterior} />
+      {revealInterior && <Furniture rooms={rooms} baseY={baseY} />}
 
       {/* Clean room floor zones + optional label */}
       {rooms.map((room) => {
@@ -115,12 +114,11 @@ function ExteriorWalls({
 }) {
   const t = 0.16
   const color = isTop ? '#f5f5ef' : '#fafaf6'
-  const edge = revealInterior ? '#e3ded4' : '#d8ddd9'
-  const sideOpacity = revealInterior ? 0.18 : 1
+  const edge = '#d8ddd9'
 
   return (
     <group>
-      <OpeningFrontWall bb={bb} wallY={wallY} wallH={wallH} level={level} isTop={isTop} revealInterior={revealInterior} />
+      {!revealInterior && <FrontWall bb={bb} wallY={wallY} wallH={wallH} level={level} isTop={isTop} />}
       <mesh position={[bb.cx, wallY, bb.z0 - t / 2]} castShadow receiveShadow>
         <boxGeometry args={[bb.w + t, wallH, t]} />
         <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} />
@@ -133,48 +131,34 @@ function ExteriorWalls({
       </mesh>
       <mesh position={[bb.x1 + t / 2, wallY, bb.cz]} castShadow receiveShadow>
         <boxGeometry args={[t, wallH, bb.d + t]} />
-        <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} transparent={revealInterior} opacity={sideOpacity} depthWrite={!revealInterior} />
-        {!revealInterior && <Edges threshold={18} color={edge} />}
+        <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} />
+        <Edges threshold={18} color={edge} />
       </mesh>
       <ClassicFacade bb={bb} wallY={wallY} wallH={wallH} isTop={isTop} revealInterior={revealInterior} />
     </group>
   )
 }
 
-function OpeningFrontWall({
+function FrontWall({
   bb,
   wallY,
   wallH,
   level,
   isTop,
-  revealInterior,
 }: {
   bb: ReturnType<typeof bbox>
   wallY: number
   wallH: number
   level: number
   isTop: boolean
-  revealInterior: boolean
 }) {
-  const group = useRef<THREE.Group>(null)
-  const progress = useRef(revealInterior ? 1 : 0)
   const t = 0.16
   const frontZ = bb.z1 + t / 2
-  const panelDepth = 0.08
-
-  useFrame((_, dt) => {
-    progress.current += ((revealInterior ? 1 : 0) - progress.current) * Math.min(1, dt * 4.2)
-    const p = progress.current
-    if (!group.current) return
-    group.current.rotation.y = -p * Math.PI * 0.72
-    group.current.position.x = bb.x0 - t / 2 - p * 0.18
-    group.current.position.z = frontZ + p * 0.2
-  })
 
   return (
-    <group ref={group} position={[bb.x0 - t / 2, 0, frontZ]}>
-      <mesh position={[bb.w / 2 + t / 2, wallY, 0]} castShadow receiveShadow>
-        <boxGeometry args={[bb.w + t, wallH, panelDepth]} />
+    <group>
+      <mesh position={[bb.cx, wallY, frontZ]} castShadow receiveShadow>
+        <boxGeometry args={[bb.w + t, wallH, t]} />
         <meshStandardMaterial color={isTop ? '#f5f5ef' : '#fafaf6'} roughness={0.58} metalness={0.01} />
         <Edges threshold={18} color="#d8ddd9" />
       </mesh>
@@ -198,18 +182,18 @@ function FrontFacadeDetails({
 }) {
   const z = 0.065
   const windowY = wallY + (isTop ? 0 : wallH * 0.07)
-  const localX = (x: number) => x - bb.x0 + 0.08
+  const frontZ = bb.z1 + 0.18
 
   if (isTop) {
-    return <FacadeWindow position={[localX(bb.cx), windowY, z]} size={[1.35, 0.72]} opacity={1} />
+    return <FacadeWindow position={[bb.cx, windowY, frontZ + z]} size={[1.35, 0.72]} opacity={1} />
   }
 
   return (
     <>
-      <FacadeWindow position={[localX(bb.x0 + bb.w * 0.28), windowY, z]} size={[1.18, 1.12]} opacity={1} />
-      <FacadeWindow position={[localX(bb.x0 + bb.w * 0.56), windowY, z]} size={[1.18, 1.12]} opacity={1} />
-      <FacadeWindow position={[localX(bb.x0 + bb.w * 0.82), windowY, z]} size={[1.05, 1.12]} opacity={1} />
-      {level === 0 && <FrontDoor x={localX(bb.x0 + 0.78)} y={wallY - 0.36} z={z + 0.012} opacity={1} />}
+      <FacadeWindow position={[bb.x0 + bb.w * 0.28, windowY, frontZ + z]} size={[1.18, 1.12]} opacity={1} />
+      <FacadeWindow position={[bb.x0 + bb.w * 0.56, windowY, frontZ + z]} size={[1.18, 1.12]} opacity={1} />
+      <FacadeWindow position={[bb.x0 + bb.w * 0.82, windowY, frontZ + z]} size={[1.05, 1.12]} opacity={1} />
+      {level === 0 && <FrontDoor x={bb.x0 + 0.78} y={wallY - 0.36} z={frontZ + z + 0.012} opacity={1} />}
     </>
   )
 }
@@ -321,6 +305,87 @@ function InteriorWalls({ rooms, baseY, revealInterior }: { rooms: Room[]; baseY:
             <mesh position={[room.x, y, room.z + room.depth / 2]} castShadow receiveShadow>
               <boxGeometry args={[0.055, 1.34, room.depth]} />
               <meshStandardMaterial color="#fffdf7" roughness={0.72} transparent opacity={opacity} depthWrite={revealInterior} />
+            </mesh>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+function Furniture({ rooms, baseY }: { rooms: Room[]; baseY: number }) {
+  return (
+    <group>
+      {rooms.map((room) => {
+        const x = room.x
+        const z = room.z
+        const y = baseY + 0.24
+        const name = room.name.toLowerCase()
+
+        if (name.includes('wohn')) {
+          return (
+            <group key={`furniture-${room.id}`}>
+              <RoundedBox position={[x + 1.35, y + 0.2, z + 1.4]} args={[1.9, 0.42, 0.72]} radius={0.08} smoothness={4} castShadow>
+                <meshStandardMaterial color="#6f8795" roughness={0.72} />
+              </RoundedBox>
+              <RoundedBox position={[x + 1.35, y + 0.55, z + 1.08]} args={[1.9, 0.72, 0.22]} radius={0.07} smoothness={4} castShadow>
+                <meshStandardMaterial color="#607987" roughness={0.78} />
+              </RoundedBox>
+              <RoundedBox position={[x + 3.4, y + 0.12, z + 2.15]} args={[1.05, 0.2, 0.72]} radius={0.06} smoothness={3} castShadow>
+                <meshStandardMaterial color="#b9966f" roughness={0.62} />
+              </RoundedBox>
+              <mesh position={[x + room.width - 0.5, y + 0.72, z + 1.7]} rotation={[0, -Math.PI / 2, 0]} castShadow>
+                <boxGeometry args={[1.05, 0.64, 0.055]} />
+                <meshStandardMaterial color="#29313a" roughness={0.38} />
+              </mesh>
+            </group>
+          )
+        }
+
+        if (name.includes('küche')) {
+          return (
+            <group key={`furniture-${room.id}`}>
+              <RoundedBox position={[x + room.width - 0.38, y + 0.42, z + 1.7]} args={[0.58, 0.84, 2.45]} radius={0.04} smoothness={3} castShadow>
+                <meshStandardMaterial color="#d7d0c4" roughness={0.66} />
+              </RoundedBox>
+              <mesh position={[x + room.width - 0.38, y + 0.88, z + 1.7]} castShadow>
+                <boxGeometry args={[0.62, 0.08, 2.55]} />
+                <meshStandardMaterial color="#7d8589" roughness={0.42} metalness={0.12} />
+              </mesh>
+              <RoundedBox position={[x + 1.35, y + 0.34, z + 2.55]} args={[1.15, 0.68, 0.86]} radius={0.05} smoothness={3} castShadow>
+                <meshStandardMaterial color="#f4f0e8" roughness={0.64} />
+              </RoundedBox>
+            </group>
+          )
+        }
+
+        if (name.includes('schlaf') || name.includes('kind') || name.includes('dach')) {
+          return (
+            <group key={`furniture-${room.id}`}>
+              <RoundedBox position={[x + room.width * 0.5, y + 0.22, z + 1.35]} args={[Math.min(1.65, room.width - 0.7), 0.44, 1.55]} radius={0.08} smoothness={4} castShadow>
+                <meshStandardMaterial color={name.includes('kind') ? '#95b7df' : '#d9d2c5'} roughness={0.7} />
+              </RoundedBox>
+              <RoundedBox position={[x + room.width * 0.5, y + 0.5, z + 0.62]} args={[Math.min(1.5, room.width - 0.85), 0.22, 0.25]} radius={0.05} smoothness={3} castShadow>
+                <meshStandardMaterial color="#f0eee7" roughness={0.76} />
+              </RoundedBox>
+              <RoundedBox position={[x + 0.48, y + 0.58, z + room.depth - 0.68]} args={[0.62, 1.18, 0.48]} radius={0.04} smoothness={3} castShadow>
+                <meshStandardMaterial color="#b89b7b" roughness={0.74} />
+              </RoundedBox>
+            </group>
+          )
+        }
+
+        return (
+          <group key={`furniture-${room.id}`}>
+            <RoundedBox position={[x + room.width * 0.5, y + 0.34, z + 1.2]} args={[1.35, 0.16, 0.72]} radius={0.04} smoothness={3} castShadow>
+              <meshStandardMaterial color="#b9966f" roughness={0.62} />
+            </RoundedBox>
+            <RoundedBox position={[x + room.width * 0.5, y + 0.18, z + 2.05]} args={[0.56, 0.36, 0.52]} radius={0.05} smoothness={3} castShadow>
+              <meshStandardMaterial color="#697b84" roughness={0.76} />
+            </RoundedBox>
+            <mesh position={[x + room.width - 0.55, y + 0.8, z + 1.25]} rotation={[0, -Math.PI / 2, 0]} castShadow>
+              <boxGeometry args={[0.92, 0.58, 0.05]} />
+              <meshStandardMaterial color="#26313a" roughness={0.42} />
             </mesh>
           </group>
         )

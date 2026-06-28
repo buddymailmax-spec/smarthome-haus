@@ -55,7 +55,7 @@ export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: 
 
       <mesh position={[0, ridgeH * 0.42, depth / 2 + 0.01]}>
         <shapeGeometry args={[gable(half, ridgeH)]} />
-        <meshStandardMaterial color="#fffdf7" roughness={0.64} side={THREE.DoubleSide} transparent={revealInterior} opacity={revealInterior ? 0.08 : 1} depthWrite={!revealInterior} />
+        <meshStandardMaterial color="#fffdf7" roughness={0.64} side={THREE.DoubleSide} transparent={revealInterior} opacity={revealInterior ? 0 : 1} depthWrite={!revealInterior} />
       </mesh>
       <mesh position={[0, ridgeH * 0.42, -depth / 2 - 0.01]}>
         <shapeGeometry args={[gable(half, ridgeH)]} />
