@@ -12,9 +12,21 @@ Ein modernes 3D-Dashboard, in dem du dein Zuhause nachbaust und deine Smart-Home
 
 ## Entwicklung
 ```bash
-npm install
-npm run dev
+npm install            # Frontend-Deps
+npm run dev            # Frontend (Vite) auf :5173
+
+cd server && npm install   # Backend-Deps
+cp .env.example .env       # Onecta-Credentials eintragen
+cd .. && npm run server    # Backend auf :3001 (hält die Daikin-Tokens)
 ```
+Ohne Backend/Credentials läuft die App im **Mock-Modus** (Beispielhaus, simulierte Geräte).
+
+## Daikin scharf schalten (echte Steuerung)
+1. `server/.env` mit `DAIKIN_CLIENT_ID` / `DAIKIN_CLIENT_SECRET` füllen.
+2. Im [Daikin Developer Portal](https://developer.cloud.daikineurope.com/) als **Redirect URI** exakt
+   `http://localhost:3001/api/daikin/auth/callback` (Dev) bzw. die Produktions-URL eintragen.
+3. Backend starten, in der App **„Mit Daikin verbinden"** klicken, bei Daikin einloggen.
+4. Klimaanlage im Haus anklicken → unter **„Daikin-Gerät"** dem echten Onecta-Gerät zuordnen.
 
 ## Architektur
 

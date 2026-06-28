@@ -12,7 +12,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import 'dotenv/config'
+import dotenv from 'dotenv'
 import {
   buildAuthorizeUrl,
   exchangeCode,
@@ -24,6 +24,9 @@ import {
 } from './onecta.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// Load server/.env regardless of the current working directory (npm run server
+// launches from the project root, so a bare dotenv/config would miss it).
+dotenv.config({ path: path.join(__dirname, '.env') })
 const TOKEN_FILE = path.join(__dirname, '.tokens.json')
 
 const CLIENT_ID = process.env.DAIKIN_CLIENT_ID
