@@ -20,7 +20,7 @@ const MODE_COLOR: Record<string, string> = {
   auto: '#5cc6b3',
 }
 
-const N_FLOW = 9
+const N_FLOW = 5
 
 export function AirConditioner3D({ device, room, revealInterior }: Props) {
   const { select, selectedId } = useHouse()
@@ -44,7 +44,7 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
       const target = on ? -0.5 + Math.sin(t * 1.6) * 0.18 : 0
       louver.current.rotation.x += (target - louver.current.rotation.x) * Math.min(1, dt * 4)
     }
-    // Compact airflow particles drift down-and-out, fading as they go.
+    // Air waves drift down-and-out from the louver.
     flowRefs.current.forEach((m, i) => {
       if (!m) return
       const mat = m.material as THREE.MeshBasicMaterial
@@ -52,14 +52,13 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
         mat.opacity += (0 - mat.opacity) * Math.min(1, dt * 6)
         return
       }
-      phases[i] = (phases[i] + dt * 0.42) % 1
+      phases[i] = (phases[i] + dt * 0.28) % 1
       const p = phases[i]
-      m.position.x = (i % 3 - 1) * 0.22 + Math.sin(t * 2.2 + i) * 0.04
-      m.position.y = -0.22 - p * 0.92
-      m.position.z = 0.22 + p * 0.62
-      const s = 0.08 + p * 0.14
-      m.scale.setScalar(s)
-      mat.opacity = Math.sin(p * Math.PI) * 0.34
+      m.position.x = Math.sin(t * 1.7 + i) * 0.025
+      m.position.y = -0.24 - p * 0.9
+      m.position.z = 0.28 + p * 0.82
+      m.scale.set(0.26 + p * 0.56, 0.14 + p * 0.22, 0.26 + p * 0.56)
+      mat.opacity = Math.sin(p * Math.PI) * 0.42
     })
   })
 
@@ -89,13 +88,14 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
         </mesh>
       </group>
 
-      {/* Airflow particles */}
+      {/* Airflow waves */}
       {phases.map((_, i) => (
         <mesh
           key={i}
           ref={(el) => { flowRefs.current[i] = el }}
+          rotation={[Math.PI / 2, 0, 0]}
         >
-          <sphereGeometry args={[1, 16, 10]} />
+          <torusGeometry args={[1, 0.028, 8, 48, Math.PI]} />
           <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}

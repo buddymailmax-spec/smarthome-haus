@@ -23,18 +23,18 @@ export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: 
     <group position={[cx, baseY, cz]}>
       <mesh position={[-half / 2, ridgeH / 2, 0]} rotation={[0, 0, angle]} castShadow receiveShadow>
         <boxGeometry args={[slope, 0.16, depth + 0.7]} />
-        <meshStandardMaterial color="#8e372b" roughness={0.82} />
-        <Edges threshold={15} color="#6e2a23" />
+        <meshStandardMaterial color="#8a3b2e" roughness={0.86} />
+        <Edges threshold={15} color="#6a2e26" />
       </mesh>
       <mesh position={[half / 2, ridgeH / 2, 0]} rotation={[0, 0, -angle]} castShadow receiveShadow>
         <boxGeometry args={[slope, 0.16, depth + 0.7]} />
-        <meshStandardMaterial color="#9c4231" roughness={0.82} />
-        <Edges threshold={15} color="#6e2a23" />
+        <meshStandardMaterial color="#9a4533" roughness={0.86} />
+        <Edges threshold={15} color="#6a2e26" />
       </mesh>
 
       <mesh position={[0, ridgeH + 0.06, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[0.11, 0.11, depth + 0.78, 18]} />
-        <meshStandardMaterial color="#713028" roughness={0.76} />
+        <meshStandardMaterial color="#6f3028" roughness={0.8} />
       </mesh>
 
       {Array.from({ length: tileCount }, (_, i) => {
@@ -43,11 +43,11 @@ export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: 
           <group key={i}>
             <mesh position={[-half / 2, ridgeH / 2 + 0.095, z]} rotation={[0, 0, angle]} castShadow>
               <boxGeometry args={[slope * 0.96, 0.035, 0.055]} />
-              <meshStandardMaterial color="#743028" roughness={0.86} />
+              <meshStandardMaterial color="#743429" roughness={0.9} />
             </mesh>
             <mesh position={[half / 2, ridgeH / 2 + 0.095, z]} rotation={[0, 0, -angle]} castShadow>
               <boxGeometry args={[slope * 0.96, 0.035, 0.055]} />
-              <meshStandardMaterial color="#7c342a" roughness={0.86} />
+              <meshStandardMaterial color="#7f392d" roughness={0.9} />
             </mesh>
           </group>
         )

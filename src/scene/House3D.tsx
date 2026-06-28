@@ -80,7 +80,7 @@ export function House3D({ revealInterior }: Props) {
         shadow-camera-bottom={-25}
       />
 
-      <OutdoorScene center={[center[0], center[1]]} footprint={footprint} onGroundClick={() => select(null)} />
+      <OutdoorScene center={[center[0], center[1]]} footprint={footprint} revealInterior={revealInterior} onGroundClick={() => select(null)} />
 
       <ContactShadows position={[center[0], 0, center[1]]} scale={40} blur={2.6} far={10} opacity={0.35} />
 
@@ -132,7 +132,17 @@ function ClassicExteriorHouse({
     <group>
       <mesh position={[footprint.cx, bodyY, footprint.cz]} castShadow receiveShadow>
         <boxGeometry args={[footprint.width, bodyH, footprint.depth]} />
-        <meshStandardMaterial color="#fbfbf7" roughness={0.56} metalness={0.01} />
+        <meshStandardMaterial color="#f8f8f2" roughness={0.62} metalness={0.01} />
+      </mesh>
+
+      <mesh position={[footprint.cx, 0.23, footprint.cz]} castShadow receiveShadow>
+        <boxGeometry args={[footprint.width + 0.08, 0.36, footprint.depth + 0.08]} />
+        <meshStandardMaterial color="#d8d4cb" roughness={0.78} />
+      </mesh>
+
+      <mesh position={[footprint.cx, bodyH + 0.08, footprint.cz]} castShadow>
+        <boxGeometry args={[footprint.width + 0.18, 0.12, footprint.depth + 0.18]} />
+        <meshStandardMaterial color="#ecebe4" roughness={0.7} />
       </mesh>
 
       <ExteriorWindow position={[footprint.x0 + footprint.width * 0.3, 1.52, frontZ]} />
@@ -149,11 +159,11 @@ function ClassicExteriorHouse({
       <group position={[footprint.x0 + 0.78, 0.9, frontZ + 0.02]}>
         <mesh castShadow>
           <boxGeometry args={[0.72, 1.7, 0.07]} />
-          <meshStandardMaterial color="#7a5134" roughness={0.7} />
+        <meshStandardMaterial color="#6d513c" roughness={0.72} />
         </mesh>
         <mesh position={[0.18, 0.22, 0.042]}>
           <boxGeometry args={[0.22, 0.92, 0.03]} />
-          <meshPhysicalMaterial color="#a8c2ce" roughness={0.08} transparent opacity={0.55} />
+        <meshPhysicalMaterial color="#abc5cf" roughness={0.08} transparent opacity={0.6} />
         </mesh>
         <mesh position={[0.25, -0.18, 0.058]}>
           <sphereGeometry args={[0.035, 12, 8]} />
@@ -200,38 +210,44 @@ function ExteriorWindow({
 function OutdoorScene({
   center,
   footprint,
+  revealInterior,
   onGroundClick,
 }: {
   center: readonly [number, number]
   footprint: { x0: number; x1: number; z0: number; z1: number; width: number; depth: number; cx: number; cz: number }
+  revealInterior: boolean
   onGroundClick: () => void
 }) {
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[center[0], -0.05, center[1]]} receiveShadow onClick={onGroundClick}>
         <planeGeometry args={[150, 150]} />
-        <meshStandardMaterial color="#7faa63" roughness={0.92} />
+        <meshStandardMaterial color={revealInterior ? '#9ab887' : '#7faa63'} roughness={0.92} />
       </mesh>
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[footprint.cx, -0.035, footprint.z1 + 4.2]} receiveShadow>
         <planeGeometry args={[footprint.width + 2.4, 5.2]} />
-        <meshStandardMaterial color="#6f7b72" roughness={0.96} />
+        <meshStandardMaterial color="#7a837a" roughness={0.96} transparent={revealInterior} opacity={revealInterior ? 0.28 : 1} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[footprint.x0 + 1.1, -0.025, footprint.z1 + 2.2]} receiveShadow>
         <planeGeometry args={[1.4, 4.7]} />
-        <meshStandardMaterial color="#d4c2a0" roughness={0.9} />
+        <meshStandardMaterial color="#d4c2a0" roughness={0.9} transparent={revealInterior} opacity={revealInterior ? 0.42 : 1} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[footprint.x1 + 3.2, -0.03, footprint.cz]} receiveShadow>
         <planeGeometry args={[4.2, footprint.depth + 8]} />
-        <meshStandardMaterial color="#b9b8b0" roughness={0.86} />
+        <meshStandardMaterial color="#b9b8b0" roughness={0.86} transparent={revealInterior} opacity={revealInterior ? 0.2 : 1} />
       </mesh>
 
-      <Patio x={footprint.x1 + 2.8} z={footprint.z0 + 1.8} />
-      <Pool x={footprint.x0 - 5.2} z={footprint.z0 + 0.8} />
-      <Garage x={footprint.x1 + 3.2} z={footprint.z1 + 0.35} />
-      <Car x={footprint.x1 + 3.2} z={footprint.z1 + 3.1} />
-      <GardenBeds footprint={footprint} />
-      <Fence footprint={footprint} />
+      {!revealInterior && (
+        <>
+          <Patio x={footprint.x1 + 2.8} z={footprint.z0 + 1.8} />
+          <Pool x={footprint.x0 - 5.2} z={footprint.z0 + 0.8} />
+          <Garage x={footprint.x1 + 3.2} z={footprint.z1 + 0.35} />
+          <Car x={footprint.x1 + 3.2} z={footprint.z1 + 3.1} />
+          <GardenBeds footprint={footprint} />
+          <Fence footprint={footprint} />
+        </>
+      )}
     </group>
   )
 }

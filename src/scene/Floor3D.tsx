@@ -33,19 +33,20 @@ export function Floor3D({ level, rooms, devices, isTop, revealInterior }: Props)
   return (
     <group>
       {/* Floor slab */}
-      <RoundedBox position={[bb.cx, baseY + 0.07, bb.cz]} args={[bb.w + 0.32, 0.14, bb.d + 0.32]} radius={0.03} smoothness={2} receiveShadow>
-        <meshStandardMaterial color="#e6e1d8" roughness={0.9} />
-        <Edges threshold={15} color="#c7c2ba" />
+      <RoundedBox position={[bb.cx, baseY + 0.07, bb.cz]} args={[bb.w + 0.32, 0.14, bb.d + 0.32]} radius={0.025} smoothness={2} receiveShadow>
+        <meshStandardMaterial color={revealInterior ? '#f3efe7' : '#e6e1d8'} roughness={0.88} />
+        <Edges threshold={15} color={revealInterior ? '#ddd6ca' : '#c7c2ba'} />
       </RoundedBox>
 
       <ExteriorWalls bb={bb} wallY={wallY} wallH={wallH} level={level} isTop={!!isTop} revealInterior={revealInterior} />
       {revealInterior && <InteriorWalls rooms={rooms} baseY={baseY} />}
 
-      {/* Per-room colored floor pad + label */}
+      {/* Clean room floor zones + optional label */}
       {revealInterior && rooms.map((room) => {
         const cx = room.x + room.width / 2
         const cz = room.z + room.depth / 2
         const selected = selectedId === room.id
+        const active = selected || hovered === room.id
         return (
           <group key={room.id}>
             <mesh
@@ -56,9 +57,13 @@ export function Floor3D({ level, rooms, devices, isTop, revealInterior }: Props)
               onPointerOut={() => setHovered(null)}
             >
               <planeGeometry args={[room.width - 0.25, room.depth - 0.25]} />
-              <meshStandardMaterial color={room.color} transparent opacity={selected ? 0.55 : 0.32} roughness={0.7} />
+              <meshStandardMaterial color={active ? room.color : '#f9f6ef'} transparent opacity={active ? 0.34 : 0.82} roughness={0.74} />
             </mesh>
-            {(selected || hovered === room.id) && (
+            <mesh position={[cx, baseY + 0.145, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[room.width - 0.18, room.depth - 0.18]} />
+              <meshBasicMaterial color={active ? room.color : '#d8d1c4'} transparent opacity={active ? 0.22 : 0.12} wireframe />
+            </mesh>
+            {active && (
               <Html position={[cx, baseY + 0.22, cz]} center distanceFactor={14} pointerEvents="none">
                 <div
                   style={{
@@ -108,8 +113,8 @@ function ExteriorWalls({
 }) {
   const t = 0.16
   const color = isTop ? '#f5f5ef' : '#fafaf6'
-  const edge = '#d8ddd9'
-  const sideOpacity = revealInterior ? 0.42 : 1
+  const edge = revealInterior ? '#e3ded4' : '#d8ddd9'
+  const sideOpacity = revealInterior ? 0.18 : 1
 
   return (
     <group>
@@ -132,8 +137,8 @@ function ExteriorWalls({
       </mesh>
       <mesh position={[bb.x1 + t / 2, wallY, bb.cz]} castShadow receiveShadow>
         <boxGeometry args={[t, wallH, bb.d + t]} />
-        <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} transparent={revealInterior} opacity={sideOpacity} />
-        <Edges threshold={18} color={edge} />
+        <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} transparent={revealInterior} opacity={sideOpacity} depthWrite={!revealInterior} />
+        {!revealInterior && <Edges threshold={18} color={edge} />}
       </mesh>
 
       <ClassicFacade bb={bb} wallY={wallY} wallH={wallH} level={level} isTop={isTop} revealInterior={revealInterior} />
@@ -161,7 +166,7 @@ function ClassicFacade({
   const rightX = bb.x1 + 0.18
   const windowY = wallY + (isTop ? 0 : wallH * 0.07)
   const frontAlpha = revealInterior ? 0 : 1
-  const sideAlpha = revealInterior ? 0.48 : 1
+  const sideAlpha = revealInterior ? 0 : 1
 
   return (
     <group>
@@ -182,8 +187,12 @@ function ClassicFacade({
           )}
           <FacadeWindow position={[rightX, windowY, bb.z0 + bb.d * 0.35]} size={[1.25, 1.02]} rotationY={Math.PI / 2} opacity={sideAlpha} />
           <FacadeWindow position={[rightX, windowY, bb.z0 + bb.d * 0.68]} size={[1.25, 1.02]} rotationY={Math.PI / 2} opacity={sideAlpha} />
-          <FacadeWindow position={[bb.x0 + bb.w * 0.34, windowY, backZ]} size={[1.18, 1.08]} opacity={1} />
-          <FacadeWindow position={[bb.x0 + bb.w * 0.66, windowY, backZ]} size={[1.18, 1.08]} opacity={1} />
+          {!revealInterior && (
+            <>
+              <FacadeWindow position={[bb.x0 + bb.w * 0.34, windowY, backZ]} size={[1.18, 1.08]} opacity={1} />
+              <FacadeWindow position={[bb.x0 + bb.w * 0.66, windowY, backZ]} size={[1.18, 1.08]} opacity={1} />
+            </>
+          )}
         </>
       )}
     </group>
@@ -250,12 +259,12 @@ function InteriorWalls({ rooms, baseY }: { rooms: Room[]; baseY: number }) {
         return (
           <group key={`walls-${room.id}`}>
             <mesh position={[room.x + room.width / 2, y, room.z]} castShadow receiveShadow>
-              <boxGeometry args={[room.width, 1.45, 0.07]} />
-              <meshStandardMaterial color="#fffdf7" roughness={0.7} />
+              <boxGeometry args={[room.width, 1.34, 0.055]} />
+              <meshStandardMaterial color="#fffdf7" roughness={0.72} />
             </mesh>
             <mesh position={[room.x, y, room.z + room.depth / 2]} castShadow receiveShadow>
-              <boxGeometry args={[0.07, 1.45, room.depth]} />
-              <meshStandardMaterial color="#fffdf7" roughness={0.7} />
+              <boxGeometry args={[0.055, 1.34, room.depth]} />
+              <meshStandardMaterial color="#fffdf7" roughness={0.72} />
             </mesh>
           </group>
         )
