@@ -23,7 +23,7 @@ const MODE_COLOR: Record<string, string> = {
 const N_FLOW = 5 // animated airflow ribbons
 
 export function AirConditioner3D({ device, room, revealInterior }: Props) {
-  const { select, selectedId, applyClimate } = useHouse()
+  const { select, selectedId } = useHouse()
   const selected = selectedId === device.id
   const on = device.state.power
   const color = MODE_COLOR[device.state.mode] ?? MODE_COLOR.auto
@@ -117,10 +117,10 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
         >
           {revealInterior ? (
             <button
+              aria-label={`Steuerung ${device.name} öffnen`}
               onClick={(e) => {
                 e.stopPropagation()
                 select(device.id)
-                applyClimate(device.id, { power: !on })
               }}
               style={{
                 width: '100%',
@@ -143,7 +143,7 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
                 <span style={{ color, fontWeight: 800 }}>{device.state.current.toFixed(1)}°</span>
               </span>
               <span style={{ display: 'block', marginTop: 3, fontSize: 10, color: '#6b7c8f' }}>
-                Ziel {device.state.target.toFixed(1)}° · Klick schaltet
+                Ziel {device.state.target.toFixed(1)}° · Details öffnen
               </span>
             </button>
           ) : (
