@@ -9,6 +9,7 @@ import { FLOOR_H } from './constants'
 interface Props {
   device: ClimateDevice
   room: Room
+  revealInterior?: boolean
 }
 
 const MODE_COLOR: Record<string, string> = {
@@ -21,8 +22,8 @@ const MODE_COLOR: Record<string, string> = {
 
 const N_FLOW = 5 // animated airflow ribbons
 
-export function AirConditioner3D({ device, room }: Props) {
-  const { select, selectedId } = useHouse()
+export function AirConditioner3D({ device, room, revealInterior }: Props) {
+  const { select, selectedId, applyClimate } = useHouse()
   const selected = selectedId === device.id
   const on = device.state.power
   const color = MODE_COLOR[device.state.mode] ?? MODE_COLOR.auto
@@ -102,24 +103,59 @@ export function AirConditioner3D({ device, room }: Props) {
       {/* Glow when running */}
       {on && <pointLight position={[0, -0.3, 0.3]} color={color} intensity={selected ? 3 : 1.4} distance={2.4} />}
 
-      {/* Temperature label, reference-style */}
-      <Html center distanceFactor={11} position={[0, 0.42, 0]} pointerEvents="none">
+      <Html center distanceFactor={revealInterior ? 9 : 11} position={[0, revealInterior ? 0.56 : 0.42, 0.04]} pointerEvents={revealInterior ? 'auto' : 'none'}>
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 1,
+            gap: revealInterior ? 4 : 1,
             transform: selected ? 'scale(1.08)' : 'scale(1)',
             transition: 'transform .15s',
+            minWidth: revealInterior ? 118 : 'auto',
           }}
         >
-          <span style={{ fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: '#8aa0b5', whiteSpace: 'nowrap' }}>
-            {on ? 'Ziel ' + device.state.target.toFixed(0) + '°' : 'Aus'}
-          </span>
-          <span style={{ fontSize: 17, fontWeight: 700, color: '#1b2a3a', lineHeight: 1 }}>
-            {device.state.current.toFixed(1)}°
-          </span>
+          {revealInterior ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                select(device.id)
+                applyClimate(device.id, { power: !on })
+              }}
+              style={{
+                width: '100%',
+                border: '1px solid rgba(219,231,242,.95)',
+                borderRadius: 12,
+                background: 'rgba(255,255,255,.92)',
+                boxShadow: selected ? `0 8px 24px ${color}44` : '0 8px 22px rgba(31,64,104,.18)',
+                color: '#1b2a3a',
+                cursor: 'pointer',
+                padding: '7px 9px',
+                textAlign: 'left',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <span style={{ display: 'block', fontSize: 11, fontWeight: 800, lineHeight: 1.15, whiteSpace: 'nowrap' }}>
+                {device.name}
+              </span>
+              <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 4, fontSize: 11, color: '#6b7c8f' }}>
+                <span>{on ? 'An' : 'Aus'} · {device.state.mode}</span>
+                <span style={{ color, fontWeight: 800 }}>{device.state.current.toFixed(1)}°</span>
+              </span>
+              <span style={{ display: 'block', marginTop: 3, fontSize: 10, color: '#6b7c8f' }}>
+                Ziel {device.state.target.toFixed(1)}° · Klick schaltet
+              </span>
+            </button>
+          ) : (
+            <>
+              <span style={{ fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: '#8aa0b5', whiteSpace: 'nowrap' }}>
+                {on ? 'Ziel ' + device.state.target.toFixed(0) + '°' : 'Aus'}
+              </span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: '#1b2a3a', lineHeight: 1 }}>
+                {device.state.current.toFixed(1)}°
+              </span>
+            </>
+          )}
         </div>
       </Html>
     </group>

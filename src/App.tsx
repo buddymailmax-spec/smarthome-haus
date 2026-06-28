@@ -4,9 +4,11 @@ import { DaikinPanel } from './components/DaikinPanel'
 import { useHouse } from './state/houseStore'
 import { useDaikinSync } from './daikin/useDaikinSync'
 import { isClimate } from './types'
+import { useState } from 'react'
 
 export default function App() {
   const { house, view, setView, addRoom } = useHouse()
+  const [revealInterior, setRevealInterior] = useState(false)
   useDaikinSync()
 
   const climates = house.devices.filter(isClimate)
@@ -19,7 +21,7 @@ export default function App() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-accent)] text-white shadow-sm">
             <HomeIcon />
@@ -32,7 +34,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Stat label="Ø Temperatur" value={`${avgTemp}°`} />
           <Stat label="Aktiv" value={`${activeClimates}/${climates.length}`} />
           <div className="ml-2 flex rounded-xl bg-white/70 p-1 shadow-sm ring-1 ring-[var(--color-line)]">
@@ -47,10 +49,18 @@ export default function App() {
       </header>
 
       {/* Body */}
-      <div className="relative flex min-h-0 flex-1 gap-4 px-4 pb-4">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4 lg:flex-row">
         {/* 3D stage */}
-        <main className="glass relative min-w-0 flex-1 overflow-hidden rounded-3xl">
-          <House3D />
+        <main className="glass relative min-h-[520px] min-w-0 flex-1 overflow-hidden rounded-3xl sm:min-h-[620px] lg:min-h-0">
+          <House3D revealInterior={revealInterior} />
+          <div className="absolute left-5 top-5 flex rounded-2xl bg-white/78 p-1 shadow-lg shadow-slate-700/10 ring-1 ring-[var(--color-line)] backdrop-blur">
+            <Seg active={!revealInterior} onClick={() => setRevealInterior(false)}>
+              Außen
+            </Seg>
+            <Seg active={revealInterior} onClick={() => setRevealInterior(true)}>
+              Innenansicht
+            </Seg>
+          </div>
           {view === 'edit' && (
             <button
               onClick={addRoom}
@@ -67,7 +77,7 @@ export default function App() {
         </main>
 
         {/* Side panel */}
-        <aside className="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto">
+        <aside className="flex w-full shrink-0 flex-col gap-4 overflow-y-visible lg:w-80 lg:overflow-y-auto">
           <Inspector />
           <DaikinPanel />
         </aside>

@@ -12,6 +12,7 @@ interface Props {
   devices: Device[]
   /** Top floor (Dachboden) skips the box shell — the roof forms its walls. */
   isTop?: boolean
+  revealInterior: boolean
 }
 
 function bbox(rooms: Room[]) {
@@ -22,7 +23,7 @@ function bbox(rooms: Room[]) {
   return { x0, x1, z0, z1, w: x1 - x0, d: z1 - z0, cx: (x0 + x1) / 2, cz: (z0 + z1) / 2 }
 }
 
-export function Floor3D({ level, rooms, devices, isTop }: Props) {
+export function Floor3D({ level, rooms, devices, isTop, revealInterior }: Props) {
   const { select, selectedId, hovered, setHovered } = useHouse()
   const bb = useMemo(() => bbox(rooms), [rooms])
   const baseY = level * FLOOR_H
@@ -37,10 +38,11 @@ export function Floor3D({ level, rooms, devices, isTop }: Props) {
         <Edges threshold={15} color="#cbbfae" />
       </RoundedBox>
 
-      <ExteriorWalls bb={bb} wallY={wallY} wallH={wallH} isTop={!!isTop} />
+      <ExteriorWalls bb={bb} wallY={wallY} wallH={wallH} isTop={!!isTop} revealInterior={revealInterior} />
+      {revealInterior && <InteriorWalls rooms={rooms} baseY={baseY} />}
 
       {/* Per-room colored floor pad + label */}
-      {rooms.map((room) => {
+      {revealInterior && rooms.map((room) => {
         const cx = room.x + room.width / 2
         const cz = room.z + room.depth / 2
         const selected = selectedId === room.id
@@ -79,10 +81,10 @@ export function Floor3D({ level, rooms, devices, isTop }: Props) {
       })}
 
       {/* Air conditioners */}
-      {devices.filter(isClimate).map((d) => {
+      {revealInterior && devices.filter(isClimate).map((d) => {
         const room = rooms.find((r) => r.id === d.roomId)
         if (!room) return null
-        return <AirConditioner3D key={d.id} device={d} room={room} />
+        return <AirConditioner3D key={d.id} device={d} room={room} revealInterior={revealInterior} />
       })}
 
     </group>
@@ -94,16 +96,20 @@ function ExteriorWalls({
   wallY,
   wallH,
   isTop,
+  revealInterior,
 }: {
   bb: ReturnType<typeof bbox>
   wallY: number
   wallH: number
   isTop: boolean
+  revealInterior: boolean
 }) {
   const t = 0.16
   const color = isTop ? '#fff9f0' : '#fffdf8'
   const edge = '#d6d0c6'
   const windowY = wallY + wallH * 0.08
+  const frontOpacity = revealInterior ? 0.18 : 1
+  const sideOpacity = revealInterior ? 0.72 : 1
 
   return (
     <group>
@@ -114,7 +120,7 @@ function ExteriorWalls({
       </mesh>
       <mesh position={[bb.cx, wallY, bb.z1 + t / 2]} castShadow receiveShadow>
         <boxGeometry args={[bb.w + t, wallH, t]} />
-        <meshStandardMaterial color={color} roughness={0.64} metalness={0.02} transparent opacity={0.72} />
+        <meshStandardMaterial color={color} roughness={0.64} metalness={0.02} transparent={revealInterior} opacity={frontOpacity} depthWrite={!revealInterior} />
         <Edges threshold={18} color={edge} />
       </mesh>
       <mesh position={[bb.x0 - t / 2, wallY, bb.cz]} castShadow receiveShadow>
@@ -124,12 +130,34 @@ function ExteriorWalls({
       </mesh>
       <mesh position={[bb.x1 + t / 2, wallY, bb.cz]} castShadow receiveShadow>
         <boxGeometry args={[t, wallH, bb.d + t]} />
-        <meshStandardMaterial color={color} roughness={0.64} metalness={0.02} transparent opacity={0.82} />
+        <meshStandardMaterial color={color} roughness={0.64} metalness={0.02} transparent={revealInterior} opacity={sideOpacity} />
         <Edges threshold={18} color={edge} />
       </mesh>
 
       <WindowRow count={Math.max(2, Math.round(bb.w / 3))} start={bb.x0} length={bb.w} fixed="z" value={bb.z1 + t + 0.006} y={windowY} />
       <WindowRow count={Math.max(1, Math.round(bb.d / 3))} start={bb.z0} length={bb.d} fixed="x" value={bb.x1 + t + 0.006} y={windowY} />
+    </group>
+  )
+}
+
+function InteriorWalls({ rooms, baseY }: { rooms: Room[]; baseY: number }) {
+  return (
+    <group>
+      {rooms.map((room) => {
+        const y = baseY + 0.86
+        return (
+          <group key={`walls-${room.id}`}>
+            <mesh position={[room.x + room.width / 2, y, room.z]} castShadow receiveShadow>
+              <boxGeometry args={[room.width, 1.45, 0.07]} />
+              <meshStandardMaterial color="#f3eee4" roughness={0.72} transparent opacity={0.62} />
+            </mesh>
+            <mesh position={[room.x, y, room.z + room.depth / 2]} castShadow receiveShadow>
+              <boxGeometry args={[0.07, 1.45, room.depth]} />
+              <meshStandardMaterial color="#f3eee4" roughness={0.72} transparent opacity={0.62} />
+            </mesh>
+          </group>
+        )
+      })}
     </group>
   )
 }

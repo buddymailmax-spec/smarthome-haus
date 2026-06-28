@@ -8,11 +8,12 @@ interface Props {
   depth: number // along z (ridge length)
   baseY: number // y of the roof eaves
   ridgeH: number
+  revealInterior?: boolean
 }
 
 // Gable roof: two warm clay-colored slopes meeting at a ridge, triangular
 // white gable ends, subtle tile ribs and a chimney.
-export function Roof3D({ cx, cz, width, depth, baseY, ridgeH }: Props) {
+export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: Props) {
   const half = width / 2
   const slope = Math.hypot(half, ridgeH)
   const angle = Math.atan2(ridgeH, half)
@@ -22,13 +23,13 @@ export function Roof3D({ cx, cz, width, depth, baseY, ridgeH }: Props) {
       {/* Left slope */}
       <mesh position={[-half / 2, ridgeH / 2, 0]} rotation={[0, 0, angle]} castShadow>
         <boxGeometry args={[slope, 0.12, depth + 0.34]} />
-        <meshStandardMaterial color="#9e3f2f" roughness={0.86} metalness={0.02} />
+        <meshStandardMaterial color="#9e3f2f" roughness={0.86} metalness={0.02} transparent={revealInterior} opacity={revealInterior ? 0.78 : 1} />
         <Edges threshold={15} color="#6f2e25" />
       </mesh>
       {/* Right slope */}
       <mesh position={[half / 2, ridgeH / 2, 0]} rotation={[0, 0, -angle]} castShadow>
         <boxGeometry args={[slope, 0.12, depth + 0.34]} />
-        <meshStandardMaterial color="#a94735" roughness={0.86} metalness={0.02} />
+        <meshStandardMaterial color="#a94735" roughness={0.86} metalness={0.02} transparent={revealInterior} opacity={revealInterior ? 0.78 : 1} />
         <Edges threshold={15} color="#6f2e25" />
       </mesh>
 
@@ -36,7 +37,7 @@ export function Roof3D({ cx, cz, width, depth, baseY, ridgeH }: Props) {
       {[depth / 2, -depth / 2].map((z, i) => (
         <mesh key={i} position={[0, 0, z]}>
           <shapeGeometry args={[gable(half, ridgeH)]} />
-          <meshStandardMaterial color="#fffaf2" roughness={0.72} side={2} />
+          <meshStandardMaterial color="#fffaf2" roughness={0.72} side={2} transparent={revealInterior && z > 0} opacity={revealInterior && z > 0 ? 0.2 : 1} />
         </mesh>
       ))}
 
