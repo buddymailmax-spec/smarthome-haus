@@ -1,6 +1,6 @@
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, ContactShadows, SoftShadows, Bounds, RoundedBox } from '@react-three/drei'
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useHouse } from '../state/houseStore'
 import { Floor3D } from './Floor3D'
@@ -48,18 +48,10 @@ export function House3D({ revealInterior }: Props) {
       baseY: topLevel * FLOOR_H + ATTIC_WALL_H + 0.08,
     }
   }, [footprint, topLevel])
-  const cameraPosition: [number, number, number] = revealInterior
-    ? [center[0], 8.5, center[1] + 20]
-    : [center[0] + 11, 9.5, center[1] + 13]
-  const cameraTarget: [number, number, number] = revealInterior
-    ? [center[0], FLOOR_H * 1.25, center[1]]
-    : [center[0], FLOOR_H * 1.2, center[1]]
-
   return (
     <Canvas
-      key={revealInterior ? 'interior' : 'exterior'}
       shadows
-      camera={{ position: cameraPosition, fov: revealInterior ? 34 : 36 }}
+      camera={{ position: [center[0] + 11, 9.5, center[1] + 13], fov: 36 }}
       dpr={[1, 2]}
       gl={{ antialias: true }}
     >
@@ -85,125 +77,57 @@ export function House3D({ revealInterior }: Props) {
       <ContactShadows position={[center[0], 0, center[1]]} scale={40} blur={2.6} far={10} opacity={0.35} />
 
       <Bounds fit clip observe margin={1.1}>
-        {revealInterior ? (
-          <>
-            {levels.map(([lvl, rooms]) => (
-              <Floor3D
-                key={lvl}
-                level={lvl}
-                rooms={rooms}
-                devices={house.devices}
-                isTop={lvl === topLevel}
-                revealInterior={revealInterior}
-              />
-            ))}
-            {roof && <Roof3D cx={roof.cx} cz={roof.cz} width={roof.width} depth={roof.depth} baseY={roof.baseY} ridgeH={ROOF_H} revealInterior />}
-          </>
-        ) : (
-          <ClassicExteriorHouse footprint={footprint} roof={roof} />
-        )}
+        {levels.map(([lvl, rooms]) => (
+          <Floor3D
+            key={lvl}
+            level={lvl}
+            rooms={rooms}
+            devices={house.devices}
+            isTop={lvl === topLevel}
+            revealInterior={revealInterior}
+          />
+        ))}
+        {roof && <Roof3D cx={roof.cx} cz={roof.cz} width={roof.width} depth={roof.depth} baseY={roof.baseY} ridgeH={ROOF_H} revealInterior={revealInterior} />}
       </Bounds>
 
-      <OrbitControls
-        makeDefault
-        target={cameraTarget}
-        enablePan
-        minDistance={6}
-        maxDistance={48}
-        maxPolarAngle={Math.PI / 2.05}
-      />
+      <SmoothCamera revealInterior={revealInterior} center={[center[0], center[1]]} />
     </Canvas>
   )
 }
 
-function ClassicExteriorHouse({
-  footprint,
-  roof,
-}: {
-  footprint: { x0: number; x1: number; z0: number; z1: number; width: number; depth: number; cx: number; cz: number }
-  roof: { cx: number; cz: number; width: number; depth: number; baseY: number }
-}) {
-  const bodyH = FLOOR_H * 2 + ATTIC_WALL_H
-  const bodyY = bodyH / 2 + 0.05
-  const frontZ = footprint.z1 + 0.11
-  const rightX = footprint.x1 + 0.11
+function SmoothCamera({ revealInterior, center }: { revealInterior: boolean; center: readonly [number, number] }) {
+  const controls = useRef<any>(null)
+  const { camera } = useThree()
+  const exteriorPos = useMemo(() => new THREE.Vector3(center[0] + 11, 9.5, center[1] + 13), [center])
+  const interiorPos = useMemo(() => new THREE.Vector3(center[0], 8.5, center[1] + 20), [center])
+  const exteriorTarget = useMemo(() => new THREE.Vector3(center[0], FLOOR_H * 1.2, center[1]), [center])
+  const interiorTarget = useMemo(() => new THREE.Vector3(center[0], FLOOR_H * 1.25, center[1]), [center])
+
+  useFrame((_, dt) => {
+    const targetPos = revealInterior ? interiorPos : exteriorPos
+    const targetLook = revealInterior ? interiorTarget : exteriorTarget
+    const k = 1 - Math.exp(-dt * 3.2)
+    camera.position.lerp(targetPos, k)
+    if (camera instanceof THREE.PerspectiveCamera) {
+      camera.fov += ((revealInterior ? 34 : 36) - camera.fov) * k
+      camera.updateProjectionMatrix()
+    }
+    if (controls.current) {
+      controls.current.target.lerp(targetLook, k)
+      controls.current.update()
+    }
+  })
 
   return (
-    <group>
-      <mesh position={[footprint.cx, bodyY, footprint.cz]} castShadow receiveShadow>
-        <boxGeometry args={[footprint.width, bodyH, footprint.depth]} />
-        <meshStandardMaterial color="#f8f8f2" roughness={0.62} metalness={0.01} />
-      </mesh>
-
-      <mesh position={[footprint.cx, 0.23, footprint.cz]} castShadow receiveShadow>
-        <boxGeometry args={[footprint.width + 0.08, 0.36, footprint.depth + 0.08]} />
-        <meshStandardMaterial color="#d8d4cb" roughness={0.78} />
-      </mesh>
-
-      <mesh position={[footprint.cx, bodyH + 0.08, footprint.cz]} castShadow>
-        <boxGeometry args={[footprint.width + 0.18, 0.12, footprint.depth + 0.18]} />
-        <meshStandardMaterial color="#ecebe4" roughness={0.7} />
-      </mesh>
-
-      <ExteriorWindow position={[footprint.x0 + footprint.width * 0.3, 1.52, frontZ]} />
-      <ExteriorWindow position={[footprint.x0 + footprint.width * 0.58, 1.52, frontZ]} />
-      <ExteriorWindow position={[footprint.x0 + footprint.width * 0.82, 1.52, frontZ]} size={[0.95, 1.08]} />
-      <ExteriorWindow position={[footprint.x0 + footprint.width * 0.3, FLOOR_H + 1.52, frontZ]} />
-      <ExteriorWindow position={[footprint.x0 + footprint.width * 0.58, FLOOR_H + 1.52, frontZ]} />
-      <ExteriorWindow position={[footprint.x0 + footprint.width * 0.82, FLOOR_H + 1.52, frontZ]} size={[0.95, 1.08]} />
-      <ExteriorWindow position={[footprint.cx, FLOOR_H * 2 + 0.72, frontZ]} size={[1.2, 0.72]} />
-
-      <ExteriorWindow position={[rightX, 1.54, footprint.z0 + footprint.depth * 0.35]} rotationY={Math.PI / 2} size={[1.12, 1.02]} />
-      <ExteriorWindow position={[rightX, FLOOR_H + 1.54, footprint.z0 + footprint.depth * 0.62]} rotationY={Math.PI / 2} size={[1.12, 1.02]} />
-
-      <group position={[footprint.x0 + 0.78, 0.9, frontZ + 0.02]}>
-        <mesh castShadow>
-          <boxGeometry args={[0.72, 1.7, 0.07]} />
-        <meshStandardMaterial color="#6d513c" roughness={0.72} />
-        </mesh>
-        <mesh position={[0.18, 0.22, 0.042]}>
-          <boxGeometry args={[0.22, 0.92, 0.03]} />
-        <meshPhysicalMaterial color="#abc5cf" roughness={0.08} transparent opacity={0.6} />
-        </mesh>
-        <mesh position={[0.25, -0.18, 0.058]}>
-          <sphereGeometry args={[0.035, 12, 8]} />
-          <meshStandardMaterial color="#c8b06d" metalness={0.4} roughness={0.28} />
-        </mesh>
-      </group>
-
-      <Roof3D cx={roof.cx} cz={roof.cz} width={roof.width} depth={roof.depth} baseY={roof.baseY} ridgeH={ROOF_H} />
-    </group>
-  )
-}
-
-function ExteriorWindow({
-  position,
-  size = [1.14, 1.08],
-  rotationY = 0,
-}: {
-  position: [number, number, number]
-  size?: [number, number]
-  rotationY?: number
-}) {
-  return (
-    <group position={position} rotation={[0, rotationY, 0]}>
-      <mesh castShadow>
-        <boxGeometry args={[size[0] + 0.16, size[1] + 0.16, 0.04]} />
-        <meshStandardMaterial color="#3b302b" roughness={0.6} />
-      </mesh>
-      <mesh position={[0, 0, 0.028]}>
-        <boxGeometry args={[size[0], size[1], 0.035]} />
-        <meshPhysicalMaterial color="#a8c3d1" roughness={0.08} metalness={0.02} transparent opacity={0.58} transmission={0.08} />
-      </mesh>
-      <mesh position={[0, 0, 0.052]}>
-        <boxGeometry args={[0.055, size[1], 0.025]} />
-        <meshStandardMaterial color="#3b302b" roughness={0.6} />
-      </mesh>
-      <mesh position={[0, 0, 0.054]}>
-        <boxGeometry args={[size[0], 0.055, 0.025]} />
-        <meshStandardMaterial color="#3b302b" roughness={0.6} />
-      </mesh>
-    </group>
+    <OrbitControls
+      ref={controls}
+      makeDefault
+      target={exteriorTarget}
+      enablePan
+      minDistance={6}
+      maxDistance={48}
+      maxPolarAngle={Math.PI / 2.05}
+    />
   )
 }
 
