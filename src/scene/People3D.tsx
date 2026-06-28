@@ -64,10 +64,24 @@ function personFor(room: Room): PersonProps | null {
     }
   }
   if (name.includes('kind')) {
+    // Max — 187 cm, blond, 20 J.
+    return {
+      position: [W * 0.55, F, D - 1.7],
+      rotation: -0.15,
+      heightM: 1.87,
+      skin: '#e8bc96',
+      hair: '#e3cb72',
+      hairStyle: 'short',
+      top: '#52606e',
+      bottom: '#394656',
+      seed: 2.1,
+    }
+  }
+  if (name.includes('büro') || name.includes('buro')) {
     // Maribel — ~170 cm, blondes Mädchen.
     return {
-      position: [W * 0.62, F, D - 1.6],
-      rotation: -0.25,
+      position: [W * 0.5, F, D - 1.6],
+      rotation: 0.18,
       heightM: 1.7,
       skin: '#f0c6a2',
       hair: '#e6d27a',
@@ -76,20 +90,6 @@ function personFor(room: Room): PersonProps | null {
       bottom: '#4a5a8c',
       dress: '#ec8fb0',
       seed: 1.3,
-    }
-  }
-  if (name.includes('büro') || name.includes('buro')) {
-    // Max — 187 cm, blond, 20 J.
-    return {
-      position: [W * 0.5, F, D - 1.7],
-      rotation: 0.18,
-      heightM: 1.87,
-      skin: '#e8bc96',
-      hair: '#e3cb72',
-      hairStyle: 'short',
-      top: '#52606e',
-      bottom: '#394656',
-      seed: 2.1,
     }
   }
   if (name.includes('dach')) {
