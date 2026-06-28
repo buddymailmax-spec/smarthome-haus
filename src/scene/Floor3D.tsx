@@ -27,7 +27,7 @@ export function Floor3D({ level, rooms, devices, isTop, revealInterior }: Props)
   const { select, selectedId, hovered, setHovered } = useHouse()
   const bb = useMemo(() => bbox(rooms), [rooms])
   const baseY = level * FLOOR_H
-  const wallH = FLOOR_H
+  const wallH = isTop ? 1.35 : FLOOR_H
   const wallY = baseY + wallH / 2 + 0.12
 
   return (
@@ -135,51 +135,52 @@ function ExteriorWalls({
         <Edges threshold={18} color={edge} />
       </mesh>
 
-      <ModernFacade bb={bb} wallY={wallY} wallH={wallH} level={level} revealInterior={revealInterior} />
+      <ClassicFacade bb={bb} wallY={wallY} wallH={wallH} level={level} isTop={isTop} revealInterior={revealInterior} />
     </group>
   )
 }
 
-function ModernFacade({
+function ClassicFacade({
   bb,
   wallY,
   wallH,
   level,
+  isTop,
   revealInterior,
 }: {
   bb: ReturnType<typeof bbox>
   wallY: number
   wallH: number
   level: number
+  isTop: boolean
   revealInterior: boolean
 }) {
   const frontZ = bb.z1 + 0.18
   const backZ = bb.z0 - 0.18
   const rightX = bb.x1 + 0.18
-  const windowY = wallY + wallH * 0.08
-  const frontAlpha = revealInterior ? 0.28 : 1
+  const windowY = wallY + (isTop ? 0 : wallH * 0.07)
+  const frontAlpha = revealInterior ? 0.08 : 1
+  const sideAlpha = revealInterior ? 0.48 : 1
 
   return (
     <group>
-      <FacadeWindow position={[bb.x0 + bb.w * 0.32, windowY, frontZ]} size={[2.25, 1.28]} opacity={frontAlpha} />
-      <FacadeWindow position={[bb.x0 + bb.w * 0.68, windowY, frontZ]} size={[2.25, 1.28]} opacity={frontAlpha} />
-      {level === 0 && <FrontDoor x={bb.x0 + 0.82} y={wallY - 0.3} z={frontZ + 0.012} opacity={frontAlpha} />}
-      {level === 1 && <Balcony x={bb.x0 + bb.w * 0.68} y={wallY - 1.26} z={frontZ + 0.38} opacity={frontAlpha} />}
-
-      <mesh position={[bb.x0 + 0.82, wallY, frontZ + 0.006]} castShadow>
-        <boxGeometry args={[0.72, wallH * 0.92, 0.035]} />
-        <meshStandardMaterial color="#b98052" roughness={0.7} transparent={revealInterior} opacity={frontAlpha} />
-      </mesh>
-      {Array.from({ length: 4 }, (_, i) => (
-        <mesh key={i} position={[bb.x0 + 0.55 + i * 0.18, wallY, frontZ + 0.032]} castShadow>
-          <boxGeometry args={[0.045, wallH * 0.82, 0.04]} />
-          <meshStandardMaterial color="#8d5f3e" roughness={0.68} transparent={revealInterior} opacity={frontAlpha} />
-        </mesh>
-      ))}
-
-      <FacadeWindow position={[rightX, windowY, bb.z0 + bb.d * 0.34]} size={[1.7, 1.12]} rotationY={Math.PI / 2} opacity={revealInterior ? 0.65 : 1} />
-      <FacadeWindow position={[rightX, windowY, bb.z0 + bb.d * 0.68]} size={[1.7, 1.12]} rotationY={Math.PI / 2} opacity={revealInterior ? 0.65 : 1} />
-      <FacadeWindow position={[bb.x0 + bb.w * 0.5, windowY, backZ]} size={[2.8, 1.16]} opacity={1} />
+      {isTop ? (
+        <>
+          <FacadeWindow position={[bb.cx, windowY, frontZ]} size={[1.35, 0.72]} opacity={frontAlpha} />
+          <FacadeWindow position={[bb.cx, windowY, backZ]} size={[1.35, 0.72]} opacity={1} />
+        </>
+      ) : (
+        <>
+          <FacadeWindow position={[bb.x0 + bb.w * 0.28, windowY, frontZ]} size={[1.18, 1.12]} opacity={frontAlpha} />
+          <FacadeWindow position={[bb.x0 + bb.w * 0.56, windowY, frontZ]} size={[1.18, 1.12]} opacity={frontAlpha} />
+          <FacadeWindow position={[bb.x0 + bb.w * 0.82, windowY, frontZ]} size={[1.05, 1.12]} opacity={frontAlpha} />
+          {level === 0 && <FrontDoor x={bb.x0 + 0.78} y={wallY - 0.36} z={frontZ + 0.012} opacity={frontAlpha} />}
+          <FacadeWindow position={[rightX, windowY, bb.z0 + bb.d * 0.35]} size={[1.25, 1.02]} rotationY={Math.PI / 2} opacity={sideAlpha} />
+          <FacadeWindow position={[rightX, windowY, bb.z0 + bb.d * 0.68]} size={[1.25, 1.02]} rotationY={Math.PI / 2} opacity={sideAlpha} />
+          <FacadeWindow position={[bb.x0 + bb.w * 0.34, windowY, backZ]} size={[1.18, 1.08]} opacity={1} />
+          <FacadeWindow position={[bb.x0 + bb.w * 0.66, windowY, backZ]} size={[1.18, 1.08]} opacity={1} />
+        </>
+      )}
     </group>
   )
 }
@@ -199,15 +200,19 @@ function FacadeWindow({
     <group position={position} rotation={[0, rotationY, 0]}>
       <mesh castShadow>
         <boxGeometry args={[size[0] + 0.16, size[1] + 0.16, 0.035]} />
-        <meshStandardMaterial color="#242a2d" roughness={0.48} transparent opacity={opacity} />
+        <meshStandardMaterial color="#3f332e" roughness={0.58} transparent opacity={opacity} />
       </mesh>
       <mesh position={[0, 0, 0.024]}>
         <boxGeometry args={[size[0], size[1], 0.035]} />
-        <meshPhysicalMaterial color="#9eb4bd" roughness={0.08} metalness={0.03} transparent opacity={0.58 * opacity} transmission={0.15} />
+        <meshPhysicalMaterial color="#a7c1cf" roughness={0.1} metalness={0.02} transparent opacity={0.56 * opacity} transmission={0.12} />
       </mesh>
       <mesh position={[0, 0, 0.046]}>
         <boxGeometry args={[0.055, size[1], 0.025]} />
-        <meshStandardMaterial color="#242a2d" roughness={0.44} transparent opacity={opacity} />
+        <meshStandardMaterial color="#3f332e" roughness={0.58} transparent opacity={opacity} />
+      </mesh>
+      <mesh position={[0, 0, 0.048]}>
+        <boxGeometry args={[size[0], 0.055, 0.025]} />
+        <meshStandardMaterial color="#3f332e" roughness={0.58} transparent opacity={opacity} />
       </mesh>
     </group>
   )
@@ -218,7 +223,7 @@ function FrontDoor({ x, y, z, opacity }: { x: number; y: number; z: number; opac
     <group position={[x, y, z]}>
       <mesh castShadow>
         <boxGeometry args={[0.72, 1.68, 0.05]} />
-        <meshStandardMaterial color="#252b2e" roughness={0.5} transparent opacity={opacity} />
+        <meshStandardMaterial color="#6d4b34" roughness={0.68} transparent opacity={opacity} />
       </mesh>
       <mesh position={[0.18, 0.2, 0.032]}>
         <boxGeometry args={[0.22, 0.9, 0.026]} />
@@ -227,25 +232,6 @@ function FrontDoor({ x, y, z, opacity }: { x: number; y: number; z: number; opac
       <mesh position={[0.25, -0.2, 0.05]}>
         <sphereGeometry args={[0.035, 12, 8]} />
         <meshStandardMaterial color="#c7b272" metalness={0.5} roughness={0.28} transparent opacity={opacity} />
-      </mesh>
-    </group>
-  )
-}
-
-function Balcony({ x, y, z, opacity }: { x: number; y: number; z: number; opacity: number }) {
-  return (
-    <group position={[x, y, z]}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[2.7, 0.12, 0.72]} />
-        <meshStandardMaterial color="#d7d5cf" roughness={0.78} transparent opacity={opacity} />
-      </mesh>
-      <mesh position={[0, 0.48, 0.35]}>
-        <boxGeometry args={[2.7, 0.72, 0.045]} />
-        <meshPhysicalMaterial color="#b4c3c8" roughness={0.08} transparent opacity={0.38 * opacity} />
-      </mesh>
-      <mesh position={[0, 0.86, 0.38]}>
-        <boxGeometry args={[2.82, 0.08, 0.08]} />
-        <meshStandardMaterial color="#2d3336" roughness={0.5} transparent opacity={opacity} />
       </mesh>
     </group>
   )

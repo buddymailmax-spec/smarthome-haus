@@ -1,4 +1,5 @@
 import { Edges } from '@react-three/drei'
+import * as THREE from 'three'
 
 interface Props {
   cx: number
@@ -10,43 +11,75 @@ interface Props {
   revealInterior?: boolean
 }
 
-// Modern new-build roof: a flat roof with an anthracite parapet, subtle roof
-// surface and slim technical boxes. No gable, no cottage look.
-export function Roof3D({ cx, cz, width, depth, baseY, revealInterior }: Props) {
+// Classic detached-house roof: brown-red roof tiles, deep eaves and a clean
+// front gable. In interior mode the front gable fades out for a clear cutaway.
+export function Roof3D({ cx, cz, width, depth, baseY, ridgeH, revealInterior }: Props) {
+  const half = width / 2
+  const slope = Math.hypot(half, ridgeH)
+  const angle = Math.atan2(ridgeH, half)
+  const tileCount = Math.max(7, Math.floor(depth / 0.58))
+
   return (
     <group position={[cx, baseY, cz]}>
-      <mesh position={[0, 0.08, 0]} castShadow receiveShadow>
-        <boxGeometry args={[width, 0.16, depth]} />
-        <meshStandardMaterial color="#e8e8e3" roughness={0.86} transparent={revealInterior} opacity={revealInterior ? 0.7 : 1} />
-        <Edges threshold={15} color="#bfc3bf" />
+      <mesh position={[-half / 2, ridgeH / 2, 0]} rotation={[0, 0, angle]} castShadow receiveShadow>
+        <boxGeometry args={[slope, 0.16, depth + 0.7]} />
+        <meshStandardMaterial color="#8e372b" roughness={0.82} />
+        <Edges threshold={15} color="#6e2a23" />
+      </mesh>
+      <mesh position={[half / 2, ridgeH / 2, 0]} rotation={[0, 0, -angle]} castShadow receiveShadow>
+        <boxGeometry args={[slope, 0.16, depth + 0.7]} />
+        <meshStandardMaterial color="#9c4231" roughness={0.82} />
+        <Edges threshold={15} color="#6e2a23" />
       </mesh>
 
-      <mesh position={[0, 0.32, -depth / 2 + 0.12]} castShadow>
-        <boxGeometry args={[width, 0.48, 0.24]} />
-        <meshStandardMaterial color="#2f3538" roughness={0.62} />
-      </mesh>
-      <mesh position={[0, 0.32, depth / 2 - 0.12]} castShadow>
-        <boxGeometry args={[width, 0.48, 0.24]} />
-        <meshStandardMaterial color="#2f3538" roughness={0.62} transparent={revealInterior} opacity={revealInterior ? 0.2 : 1} depthWrite={!revealInterior} />
-      </mesh>
-      <mesh position={[-width / 2 + 0.12, 0.32, 0]} castShadow>
-        <boxGeometry args={[0.24, 0.48, depth]} />
-        <meshStandardMaterial color="#2f3538" roughness={0.62} />
-      </mesh>
-      <mesh position={[width / 2 - 0.12, 0.32, 0]} castShadow>
-        <boxGeometry args={[0.24, 0.48, depth]} />
-        <meshStandardMaterial color="#2f3538" roughness={0.62} />
+      <mesh position={[0, ridgeH + 0.06, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.11, 0.11, depth + 0.78, 18]} />
+        <meshStandardMaterial color="#713028" roughness={0.76} />
       </mesh>
 
-      <mesh position={[width * 0.24, 0.58, -depth * 0.18]} castShadow>
-        <boxGeometry args={[1.2, 0.36, 0.72]} />
-        <meshStandardMaterial color="#b9bfbd" roughness={0.78} />
-        <Edges threshold={15} color="#8e9895" />
+      {Array.from({ length: tileCount }, (_, i) => {
+        const z = -depth / 2 + ((i + 0.5) * depth) / tileCount
+        return (
+          <group key={i}>
+            <mesh position={[-half / 2, ridgeH / 2 + 0.095, z]} rotation={[0, 0, angle]} castShadow>
+              <boxGeometry args={[slope * 0.96, 0.035, 0.055]} />
+              <meshStandardMaterial color="#743028" roughness={0.86} />
+            </mesh>
+            <mesh position={[half / 2, ridgeH / 2 + 0.095, z]} rotation={[0, 0, -angle]} castShadow>
+              <boxGeometry args={[slope * 0.96, 0.035, 0.055]} />
+              <meshStandardMaterial color="#7c342a" roughness={0.86} />
+            </mesh>
+          </group>
+        )
+      })}
+
+      <mesh position={[0, ridgeH * 0.42, depth / 2 + 0.01]}>
+        <shapeGeometry args={[gable(half, ridgeH)]} />
+        <meshStandardMaterial color="#fffdf7" roughness={0.64} side={THREE.DoubleSide} transparent={revealInterior} opacity={revealInterior ? 0.08 : 1} depthWrite={!revealInterior} />
       </mesh>
-      <mesh position={[-width * 0.22, 0.5, depth * 0.12]} castShadow>
-        <boxGeometry args={[0.72, 0.2, 0.72]} />
-        <meshStandardMaterial color="#202629" roughness={0.72} />
+      <mesh position={[0, ridgeH * 0.42, -depth / 2 - 0.01]}>
+        <shapeGeometry args={[gable(half, ridgeH)]} />
+        <meshStandardMaterial color="#fffdf7" roughness={0.64} side={THREE.DoubleSide} />
+      </mesh>
+
+      <mesh position={[width * 0.25, ridgeH * 0.72, -depth * 0.16]} castShadow>
+        <boxGeometry args={[0.46, 0.92, 0.46]} />
+        <meshStandardMaterial color="#d7d0c3" roughness={0.82} />
+        <Edges threshold={15} color="#9d9283" />
+      </mesh>
+      <mesh position={[width * 0.25, ridgeH * 1.2, -depth * 0.16]} castShadow>
+        <boxGeometry args={[0.58, 0.14, 0.58]} />
+        <meshStandardMaterial color="#743028" roughness={0.78} />
       </mesh>
     </group>
   )
+}
+
+function gable(half: number, h: number) {
+  const s = new THREE.Shape()
+  s.moveTo(-half, -h * 0.42)
+  s.lineTo(half, -h * 0.42)
+  s.lineTo(0, h * 0.58)
+  s.closePath()
+  return s
 }

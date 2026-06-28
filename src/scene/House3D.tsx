@@ -7,6 +7,8 @@ import { Floor3D } from './Floor3D'
 import { Roof3D } from './Roof3D'
 import { FLOOR_H, ROOF_H } from './constants'
 
+const ATTIC_WALL_H = 1.35
+
 interface Props {
   revealInterior: boolean
 }
@@ -43,7 +45,7 @@ export function House3D({ revealInterior }: Props) {
       cz: footprint.cz,
       width: footprint.width + 1.2,
       depth: footprint.depth + 1,
-      baseY: topLevel * FLOOR_H + FLOOR_H + 0.08,
+      baseY: topLevel * FLOOR_H + ATTIC_WALL_H + 0.08,
     }
   }, [footprint, topLevel])
 
