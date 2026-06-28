@@ -152,8 +152,8 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
           </section>
 
           <section className="space-y-5">
-            <DaikinPanel />
-            <Inspector />
+            <DaikinPanel embedded />
+            <Inspector embedded />
           </section>
         </div>
       </div>

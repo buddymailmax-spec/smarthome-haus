@@ -2,14 +2,20 @@ import { useMemo, useState } from 'react'
 import { useHouse } from '../state/houseStore'
 import { isClimate } from '../types'
 
-export function DaikinPanel() {
+export function DaikinPanel({ embedded = false }: { embedded?: boolean } = {}) {
   const { house, daikin, refreshDaikinStatus, bindDevice, assignDeviceRoom, renameDevice } = useHouse()
   const [open, setOpen] = useState(false)
   const climates = useMemo(() => house.devices.filter(isClimate), [house.devices])
   const bound = climates.filter((d) => d.binding?.adapter === 'onecta').length
 
+  // Clean, solid card inside the settings modal; floating "glass" only when
+  // the panel sits over the 3D scene.
+  const wrap = embedded
+    ? 'rounded-2xl border border-[var(--color-line)] bg-[var(--color-sky-2)] p-5'
+    : 'glass panel-pop rounded-2xl p-5'
+
   return (
-    <div className="glass panel-pop rounded-2xl p-5">
+    <div className={wrap}>
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-[var(--color-ink)]">Daikin</h2>
         <StatusBadge configured={daikin.configured} connected={daikin.connected} />
@@ -17,14 +23,29 @@ export function DaikinPanel() {
 
       {daikin.connected ? (
         <div className="mt-3">
-          <p className="text-sm text-[var(--color-muted)]">
-            {daikin.units.length} {daikin.units.length === 1 ? 'Anlage' : 'Anlagen'} gefunden · {bound}/{climates.length} zugeordnet
-          </p>
+          {daikin.units.length === 0 ? (
+            <p className="text-sm leading-relaxed text-[var(--color-muted)]">
+              Verbunden, aber es wurde keine Klimaanlage in deinem Daikin-Konto gefunden. Die Anlagen
+              links lassen sich trotzdem im Demo-Modus steuern.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-[var(--color-muted)]">
+                {daikin.units.length} {daikin.units.length === 1 ? 'Anlage' : 'Anlagen'} gefunden · {bound}/{climates.length} zugeordnet
+              </p>
+              <button
+                onClick={() => setOpen(true)}
+                className="mt-3 w-full rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[var(--color-accent)]/20 transition hover:-translate-y-0.5 hover:brightness-105"
+              >
+                Zuordnung öffnen
+              </button>
+            </>
+          )}
           <button
-            onClick={() => setOpen(true)}
-            className="mt-3 w-full rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[var(--color-accent)]/20 transition hover:-translate-y-0.5 hover:brightness-105"
+            onClick={() => refreshDaikinStatus()}
+            className="mt-2 w-full rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[var(--color-ink)] ring-1 ring-[var(--color-line)] transition hover:bg-[var(--color-sky-2)]"
           >
-            Zuordnung öffnen
+            Geräte neu laden
           </button>
         </div>
       ) : daikin.configured ? (

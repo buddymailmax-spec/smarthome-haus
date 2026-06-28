@@ -14,17 +14,21 @@ const MODES: { id: ClimateMode; label: string; icon: string }[] = [
 const inputCls =
   'w-full rounded-lg bg-[var(--color-sky-2)] px-3 py-1.5 text-[var(--color-ink)] outline-none ring-1 ring-[var(--color-line)] focus:ring-2 focus:ring-[var(--color-accent)]'
 
-export function Inspector() {
+export function Inspector({ embedded = false }: { embedded?: boolean } = {}) {
   const { house, selectedId, view, daikin, applyClimate, bindDevice, assignDeviceRoom, renameDevice, toggleSimple, updateRoom, removeRoom } = useHouse()
+
+  // Inside the settings modal we drop the translucent "glass" look (meant for
+  // floating over the 3D scene) for a clean, solid card.
+  const wrap = embedded ? 'rounded-2xl border border-[var(--color-line)] bg-[var(--color-sky-2)] p-5' : 'glass rounded-2xl p-5'
 
   const device = house.devices.find((d) => d.id === selectedId)
   const room = house.rooms.find((r) => r.id === selectedId)
 
   if (!device && !room) {
     return (
-      <div className="glass rounded-2xl p-5 text-sm text-[var(--color-muted)]">
+      <div className={`${wrap} text-sm text-[var(--color-muted)]`}>
         <p className="font-medium text-[var(--color-ink)]">Nichts ausgewählt</p>
-        <p className="mt-1 leading-relaxed">Klick auf einen Raum oder eine Klimaanlage im Haus, um sie zu steuern.</p>
+        <p className="mt-1 leading-relaxed">Klick auf einen Raum im Haus, um ihn zu bearbeiten.</p>
       </div>
     )
   }
@@ -33,7 +37,7 @@ export function Inspector() {
   if (device && isClimate(device)) {
     const s = device.state
     return (
-      <div className="glass rounded-2xl p-5">
+      <div className={wrap}>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-[var(--color-ink)]">{device.name}</h2>
@@ -159,7 +163,7 @@ export function Inspector() {
   if (device) {
     const on = !!device.state.on
     return (
-      <div className="glass rounded-2xl p-5">
+      <div className={wrap}>
         <h2 className="text-base font-semibold text-[var(--color-ink)]">{device.name}</h2>
         <p className="text-xs capitalize text-[var(--color-muted)]">{device.kind}</p>
         {device.kind === 'sensor' ? (
@@ -184,7 +188,7 @@ export function Inspector() {
   // --- Room editor ---
   if (room) {
     return (
-      <div className="glass rounded-2xl p-5">
+      <div className={wrap}>
         <h2 className="text-base font-semibold text-[var(--color-ink)]">{room.name}</h2>
         <p className="text-xs text-[var(--color-muted)]">
           {LEVEL_NAMES[room.level] ?? `Ebene ${room.level}`} · {(room.width * room.depth).toFixed(1)} m²
