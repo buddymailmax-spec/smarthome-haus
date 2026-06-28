@@ -27,7 +27,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // Load server/.env regardless of the current working directory (npm run server
 // launches from the project root, so a bare dotenv/config would miss it).
 dotenv.config({ path: path.join(__dirname, '.env') })
-const TOKEN_FILE = path.join(__dirname, '.tokens.json')
+// Token file lives in DATA_DIR so it can sit on a persistent volume in
+// production (a plain container path is wiped on every redeploy).
+const DATA_DIR = process.env.DATA_DIR || __dirname
+const TOKEN_FILE = path.join(DATA_DIR, '.tokens.json')
 
 const CLIENT_ID = process.env.DAIKIN_CLIENT_ID
 const CLIENT_SECRET = process.env.DAIKIN_CLIENT_SECRET
@@ -143,5 +146,19 @@ app.post('/api/daikin/:unitId', async (req, res) => {
 })
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
+
+// --- Serve the built frontend (production) ---
+// Same origin as the API: no CORS, and the OAuth redirect URI is simply
+// https://<domain>/api/daikin/auth/callback. In dev, dist/ doesn't exist and
+// Vite serves the frontend with a proxy to this backend instead.
+const DIST = path.join(__dirname, '..', 'dist')
+if (fs.existsSync(DIST)) {
+  app.use(express.static(DIST))
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next()
+    res.sendFile(path.join(DIST, 'index.html'))
+  })
+  console.log('📦 Frontend wird aus dist/ ausgeliefert')
+}
 
 app.listen(PORT, () => console.log(`🏠 Smart-Home backend auf http://localhost:${PORT}`))
