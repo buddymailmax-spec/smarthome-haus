@@ -132,9 +132,39 @@ function OutdoorScene({
 
       <Patio x={footprint.x1 + 2.8} z={footprint.z0 + 1.8} />
       <Pool x={footprint.x0 - 5.2} z={footprint.z0 + 0.8} />
-      <Car x={footprint.x1 + 3.2} z={footprint.z1 + 2.8} />
+      <Garage x={footprint.x1 + 3.2} z={footprint.z1 + 0.35} />
+      <Car x={footprint.x1 + 3.2} z={footprint.z1 + 3.1} />
       <GardenBeds footprint={footprint} />
       <Fence footprint={footprint} />
+    </group>
+  )
+}
+
+function Garage({ x, z }: { x: number; z: number }) {
+  return (
+    <group position={[x, 0.02, z]}>
+      <mesh position={[0, 1.12, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.6, 2.24, 2.6]} />
+        <meshStandardMaterial color="#f4f4ef" roughness={0.62} />
+      </mesh>
+      <mesh position={[0, 1.1, 1.32]} castShadow>
+        <boxGeometry args={[2.55, 1.42, 0.08]} />
+        <meshStandardMaterial color="#30363a" roughness={0.56} metalness={0.12} />
+      </mesh>
+      {[-0.72, 0, 0.72].map((y, i) => (
+        <mesh key={i} position={[0, 1.1 + y, 1.37]}>
+          <boxGeometry args={[2.42, 0.035, 0.025]} />
+          <meshStandardMaterial color="#586065" roughness={0.5} />
+        </mesh>
+      ))}
+      <mesh position={[0, 2.34, 0]} castShadow>
+        <boxGeometry args={[3.9, 0.28, 2.9]} />
+        <meshStandardMaterial color="#2f3538" roughness={0.62} />
+      </mesh>
+      <mesh position={[-1.74, 1.18, -0.2]} castShadow>
+        <boxGeometry args={[0.18, 2.3, 2.8]} />
+        <meshStandardMaterial color="#bd875d" roughness={0.72} />
+      </mesh>
     </group>
   )
 }
