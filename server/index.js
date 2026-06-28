@@ -31,6 +31,10 @@ dotenv.config({ path: path.join(__dirname, '.env') })
 // production (a plain container path is wiped on every redeploy).
 const DATA_DIR = process.env.DATA_DIR || __dirname
 const TOKEN_FILE = path.join(DATA_DIR, '.tokens.json')
+// Shared house config (rooms, devices, names, bindings). Lives on the same
+// persistent volume so every device loads the same setup — configure once,
+// runs everywhere — instead of each browser keeping its own localStorage copy.
+const HOUSE_FILE = path.join(DATA_DIR, 'house.json')
 
 const CLIENT_ID = process.env.DAIKIN_CLIENT_ID
 const CLIENT_SECRET = process.env.DAIKIN_CLIENT_SECRET
@@ -56,6 +60,20 @@ function saveTokens(t) {
     expires_at: Date.now() + (t.expires_in - 60) * 1000,
   }
   fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens), 'utf8')
+}
+
+// --- House store (file-backed; shared across all devices) ---
+let houseDoc = null // { ...house, updatedAt }
+try {
+  if (fs.existsSync(HOUSE_FILE)) houseDoc = JSON.parse(fs.readFileSync(HOUSE_FILE, 'utf8'))
+} catch (e) {
+  console.warn('House-Datei nicht lesbar:', e.message)
+}
+function saveHouse(house) {
+  fs.mkdirSync(DATA_DIR, { recursive: true })
+  houseDoc = { ...house, updatedAt: Date.now() }
+  fs.writeFileSync(HOUSE_FILE, JSON.stringify(houseDoc), 'utf8')
+  return houseDoc
 }
 
 async function accessToken() {
@@ -149,6 +167,22 @@ app.post('/api/daikin/:unitId', async (req, res) => {
   } catch (e) {
     res.status(e.message === 'not_connected' ? 401 : 500).json({ error: e.message })
   }
+})
+
+// --- Shared house config ---
+// Returns the saved house (or null if none yet). Every device pulls this on
+// start so a setup made on one device shows up on all the others.
+app.get('/api/house', (_req, res) => res.json(houseDoc))
+
+app.put('/api/house', (req, res) => {
+  const body = req.body
+  if (!body || typeof body !== 'object' || !Array.isArray(body.rooms) || !Array.isArray(body.devices)) {
+    return res.status(400).json({ error: 'invalid_house' })
+  }
+  // Strip a client-sent updatedAt; the server owns that field.
+  const { updatedAt: _ignore, ...house } = body
+  const saved = saveHouse(house)
+  res.json({ ok: true, updatedAt: saved.updatedAt })
 })
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))

@@ -200,3 +200,60 @@ export const useHouse = create<HouseState>()(
     },
   ),
 )
+
+// --- Cross-device sync ------------------------------------------------------
+// The house config (rooms, devices, names, bindings, AC settings) is the shared
+// source of truth on the backend, not per-browser localStorage. Each device
+// pulls it on start (and on window focus) and pushes its own edits back, so you
+// set things up once and every device picks it up. localStorage stays as a
+// fast offline cache; the server always wins when it has data.
+const HOUSE_URL = '/api/house'
+let applyingRemote = false
+let lastSynced = ''
+let pushTimer: ReturnType<typeof setTimeout> | null = null
+
+async function pullHouse() {
+  try {
+    const r = await fetch(HOUSE_URL)
+    if (!r.ok) return
+    const doc = await r.json()
+    if (!doc || !Array.isArray(doc.rooms) || !Array.isArray(doc.devices)) return
+    const { updatedAt: _u, ...house } = doc
+    const body = JSON.stringify(house)
+    if (body === lastSynced) return // already in sync, nothing to apply
+    applyingRemote = true
+    useHouse.setState({ house: normalizeHouse(house as House) })
+    lastSynced = body
+    applyingRemote = false
+  } catch {
+    // backend not running -> local/mock mode, no sync
+  }
+}
+
+function schedulePush(house: House) {
+  if (pushTimer) clearTimeout(pushTimer)
+  pushTimer = setTimeout(async () => {
+    const body = JSON.stringify(house)
+    if (body === lastSynced) return
+    try {
+      const r = await fetch(HOUSE_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      })
+      if (r.ok) lastSynced = body
+    } catch {
+      // offline -> keep the localStorage copy; retry on next change
+    }
+  }, 600)
+}
+
+if (typeof window !== 'undefined') {
+  pullHouse()
+  useHouse.subscribe((state, prev) => {
+    if (applyingRemote || state.house === prev.house) return
+    schedulePush(state.house)
+  })
+  // Pick up edits made on other devices when this tab regains focus.
+  window.addEventListener('focus', () => pullHouse())
+}
