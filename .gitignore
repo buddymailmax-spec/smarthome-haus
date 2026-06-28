@@ -8,3 +8,5 @@ server/.tokens.json
 data
 *.log
 .DS_Store
+
+tsconfig.tsbuildinfo
