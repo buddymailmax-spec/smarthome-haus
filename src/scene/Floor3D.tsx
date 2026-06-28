@@ -5,6 +5,7 @@ import { isClimate } from '../types'
 import { useHouse } from '../state/houseStore'
 import { AirConditioner3D } from './AirConditioner3D'
 import { Furniture3D } from './Furniture3D'
+import { People3D } from './People3D'
 import { FLOOR_H } from './constants'
 
 interface Props {
@@ -42,6 +43,7 @@ export function Floor3D({ level, rooms, devices, isTop, revealInterior }: Props)
       <ExteriorWalls bb={bb} wallY={wallY} wallH={wallH} level={level} isTop={!!isTop} revealInterior={revealInterior} />
       <InteriorWalls rooms={rooms} baseY={baseY} revealInterior={revealInterior} />
       {revealInterior && <Furniture3D rooms={rooms} baseY={baseY} />}
+      {revealInterior && <People3D rooms={rooms} baseY={baseY} />}
 
       {/* Clean room floor zones + optional label */}
       {rooms.map((room) => {
