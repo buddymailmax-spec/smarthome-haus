@@ -20,7 +20,7 @@ const MODE_COLOR: Record<string, string> = {
   auto: '#5cc6b3',
 }
 
-const N_FLOW = 0 // keep the cutaway clean; no long airflow guide lines
+const N_FLOW = 9
 
 export function AirConditioner3D({ device, room, revealInterior }: Props) {
   const { select, selectedId } = useHouse()
@@ -44,7 +44,7 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
       const target = on ? -0.5 + Math.sin(t * 1.6) * 0.18 : 0
       louver.current.rotation.x += (target - louver.current.rotation.x) * Math.min(1, dt * 4)
     }
-    // Airflow ribbons drift down-and-out, fading as they go.
+    // Compact airflow particles drift down-and-out, fading as they go.
     flowRefs.current.forEach((m, i) => {
       if (!m) return
       const mat = m.material as THREE.MeshBasicMaterial
@@ -52,13 +52,14 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
         mat.opacity += (0 - mat.opacity) * Math.min(1, dt * 6)
         return
       }
-      phases[i] = (phases[i] + dt * 0.5) % 1
+      phases[i] = (phases[i] + dt * 0.42) % 1
       const p = phases[i]
-      m.position.y = -0.18 - p * 1.15
-      m.position.z = 0.28 + p * 0.55
-      const s = 0.5 + p * 1.1
-      m.scale.set(s, s, s)
-      mat.opacity = Math.sin(p * Math.PI) * 0.5
+      m.position.x = (i % 3 - 1) * 0.22 + Math.sin(t * 2.2 + i) * 0.04
+      m.position.y = -0.22 - p * 0.92
+      m.position.z = 0.22 + p * 0.62
+      const s = 0.08 + p * 0.14
+      m.scale.setScalar(s)
+      mat.opacity = Math.sin(p * Math.PI) * 0.34
     })
   })
 
@@ -88,15 +89,14 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
         </mesh>
       </group>
 
-      {/* Airflow ribbons */}
+      {/* Airflow particles */}
       {phases.map((_, i) => (
         <mesh
           key={i}
           ref={(el) => { flowRefs.current[i] = el }}
-          rotation={[-Math.PI / 2.2, 0, 0]}
         >
-          <ringGeometry args={[0.16, 0.24, 24, 1, Math.PI * 0.15, Math.PI * 0.7]} />
-          <meshBasicMaterial color={color} transparent opacity={0} side={THREE.DoubleSide} depthWrite={false} />
+          <sphereGeometry args={[1, 16, 10]} />
+          <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}
 
@@ -123,27 +123,19 @@ export function AirConditioner3D({ device, room, revealInterior }: Props) {
                 select(device.id)
               }}
               style={{
-                width: '100%',
                 border: '1px solid rgba(219,231,242,.95)',
-                borderRadius: 12,
+                borderRadius: 999,
                 background: 'rgba(255,255,255,.92)',
                 boxShadow: selected ? `0 8px 24px ${color}44` : '0 8px 22px rgba(31,64,104,.18)',
                 color: '#1b2a3a',
                 cursor: 'pointer',
-                padding: '7px 9px',
-                textAlign: 'left',
+                padding: '5px 10px',
+                textAlign: 'center',
                 backdropFilter: 'blur(10px)',
               }}
             >
               <span style={{ display: 'block', fontSize: 11, fontWeight: 800, lineHeight: 1.15, whiteSpace: 'nowrap' }}>
                 {device.name}
-              </span>
-              <span style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 4, fontSize: 11, color: '#6b7c8f' }}>
-                <span>{on ? 'An' : 'Aus'} · {device.state.mode}</span>
-                <span style={{ color, fontWeight: 800 }}>{device.state.current.toFixed(1)}°</span>
-              </span>
-              <span style={{ display: 'block', marginTop: 3, fontSize: 10, color: '#6b7c8f' }}>
-                Ziel {device.state.target.toFixed(1)}° · Details öffnen
               </span>
             </button>
           ) : (

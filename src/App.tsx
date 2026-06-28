@@ -18,6 +18,7 @@ const MODES: { id: ClimateMode; label: string }[] = [
 export default function App() {
   const { house, selectedId, view, setView, addRoom, select, applyClimate } = useHouse()
   const [revealInterior, setRevealInterior] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   useDaikinSync()
 
   const climates = house.devices.filter(isClimate)
@@ -56,11 +57,18 @@ export default function App() {
               Bearbeiten
             </Seg>
           </div>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="ml-1 grid h-10 w-10 place-items-center rounded-xl bg-white/80 text-[var(--color-ink)] shadow-sm ring-1 ring-[var(--color-line)] transition hover:-translate-y-0.5 hover:bg-white"
+            aria-label="Einstellungen öffnen"
+          >
+            <GearIcon />
+          </button>
         </div>
       </header>
 
       {/* Body */}
-      <div className="relative flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4 lg:flex-row">
+      <div className="relative flex min-h-0 flex-1 px-4 pb-4">
         {/* 3D stage */}
         <main className="glass relative min-h-[520px] min-w-0 flex-1 overflow-hidden rounded-3xl sm:min-h-[620px] lg:min-h-0">
           <House3D revealInterior={revealInterior} />
@@ -87,12 +95,9 @@ export default function App() {
           )}
         </main>
 
-        {/* Side panel */}
-        <aside className="flex w-full shrink-0 flex-col gap-4 overflow-y-visible lg:w-80 lg:overflow-y-auto">
-          <Inspector />
-          <DaikinPanel />
-        </aside>
       </div>
+
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
 
       {selectedClimate && (
         <ClimateControlModal
@@ -102,6 +107,35 @@ export default function App() {
           onCommand={(cmd) => applyClimate(selectedClimate.id, cmd)}
         />
       )}
+    </div>
+  )
+}
+
+function SettingsModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[rgba(27,42,58,0.34)] p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="modal-pop max-h-[86vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-[var(--color-line)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">System</p>
+            <h2 className="mt-1 text-lg font-semibold text-[var(--color-ink)]">Einstellungen</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-sky-2)] text-xl leading-none text-[var(--color-muted)] ring-1 ring-[var(--color-line)] transition hover:text-[var(--color-ink)]"
+            aria-label="Schließen"
+          >
+            ×
+          </button>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+          <Inspector />
+          <DaikinPanel />
+        </div>
+      </div>
     </div>
   )
 }
@@ -230,6 +264,15 @@ function HomeIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 10.5 12 3l9 7.5" />
       <path d="M5 9.5V21h14V9.5" />
+    </svg>
+  )
+}
+
+function GearIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+      <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.04.04a2.1 2.1 0 0 1-2.97 2.97l-.04-.04a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.09 1.65V21.3a2.1 2.1 0 0 1-4.2 0v-.06a1.8 1.8 0 0 0-1.09-1.65 1.8 1.8 0 0 0-1.98.36l-.04.04a2.1 2.1 0 1 1-2.97-2.97l.04-.04A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.65-1.09H2.9a2.1 2.1 0 0 1 0-4.2h.06A1.8 1.8 0 0 0 4.6 8.62a1.8 1.8 0 0 0-.36-1.98l-.04-.04A2.1 2.1 0 1 1 7.17 3.63l.04.04a1.8 1.8 0 0 0 1.98.36 1.8 1.8 0 0 0 1.09-1.65V2.3a2.1 2.1 0 0 1 4.2 0v.06a1.8 1.8 0 0 0 1.09 1.65 1.8 1.8 0 0 0 1.98-.36l.04-.04a2.1 2.1 0 0 1 2.97 2.97l-.04.04a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.65 1.09h.06a2.1 2.1 0 0 1 0 4.2h-.06A1.8 1.8 0 0 0 19.4 15Z" />
     </svg>
   )
 }

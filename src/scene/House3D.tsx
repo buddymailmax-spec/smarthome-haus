@@ -135,15 +135,6 @@ function ClassicExteriorHouse({
         <meshStandardMaterial color="#fbfbf7" roughness={0.56} metalness={0.01} />
       </mesh>
 
-      <mesh position={[footprint.cx, FLOOR_H + 0.04, frontZ + 0.012]} castShadow>
-        <boxGeometry args={[footprint.width + 0.08, 0.08, 0.05]} />
-        <meshStandardMaterial color="#e6e7e2" roughness={0.64} />
-      </mesh>
-      <mesh position={[footprint.cx, FLOOR_H * 2 + 0.04, frontZ + 0.012]} castShadow>
-        <boxGeometry args={[footprint.width + 0.08, 0.08, 0.05]} />
-        <meshStandardMaterial color="#e6e7e2" roughness={0.64} />
-      </mesh>
-
       <ExteriorWindow position={[footprint.x0 + footprint.width * 0.3, 1.52, frontZ]} />
       <ExteriorWindow position={[footprint.x0 + footprint.width * 0.58, 1.52, frontZ]} />
       <ExteriorWindow position={[footprint.x0 + footprint.width * 0.82, 1.52, frontZ]} size={[0.95, 1.08]} />
