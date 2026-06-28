@@ -20,7 +20,7 @@ const MODE_COLOR: Record<string, string> = {
   auto: '#5cc6b3',
 }
 
-const N_FLOW = 5 // animated airflow ribbons
+const N_FLOW = 0 // keep the cutaway clean; no long airflow guide lines
 
 export function AirConditioner3D({ device, room, revealInterior }: Props) {
   const { select, selectedId } = useHouse()

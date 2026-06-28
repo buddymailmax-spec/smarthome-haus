@@ -109,8 +109,7 @@ function ExteriorWalls({
   const t = 0.16
   const color = isTop ? '#f5f5ef' : '#fafaf6'
   const edge = '#d8ddd9'
-  const frontOpacity = revealInterior ? 0.18 : 1
-  const sideOpacity = revealInterior ? 0.72 : 1
+  const sideOpacity = revealInterior ? 0.42 : 1
 
   return (
     <group>
@@ -119,11 +118,13 @@ function ExteriorWalls({
         <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} />
         <Edges threshold={18} color={edge} />
       </mesh>
-      <mesh position={[bb.cx, wallY, bb.z1 + t / 2]} castShadow receiveShadow>
-        <boxGeometry args={[bb.w + t, wallH, t]} />
-        <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} transparent={revealInterior} opacity={frontOpacity} depthWrite={!revealInterior} />
-        <Edges threshold={18} color={edge} />
-      </mesh>
+      {!revealInterior && (
+        <mesh position={[bb.cx, wallY, bb.z1 + t / 2]} castShadow receiveShadow>
+          <boxGeometry args={[bb.w + t, wallH, t]} />
+          <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} />
+          <Edges threshold={18} color={edge} />
+        </mesh>
+      )}
       <mesh position={[bb.x0 - t / 2, wallY, bb.cz]} castShadow receiveShadow>
         <boxGeometry args={[t, wallH, bb.d + t]} />
         <meshStandardMaterial color={color} roughness={0.58} metalness={0.01} />
@@ -159,7 +160,7 @@ function ClassicFacade({
   const backZ = bb.z0 - 0.18
   const rightX = bb.x1 + 0.18
   const windowY = wallY + (isTop ? 0 : wallH * 0.07)
-  const frontAlpha = revealInterior ? 0.08 : 1
+  const frontAlpha = revealInterior ? 0 : 1
   const sideAlpha = revealInterior ? 0.48 : 1
 
   return (
@@ -171,10 +172,14 @@ function ClassicFacade({
         </>
       ) : (
         <>
-          <FacadeWindow position={[bb.x0 + bb.w * 0.28, windowY, frontZ]} size={[1.18, 1.12]} opacity={frontAlpha} />
-          <FacadeWindow position={[bb.x0 + bb.w * 0.56, windowY, frontZ]} size={[1.18, 1.12]} opacity={frontAlpha} />
-          <FacadeWindow position={[bb.x0 + bb.w * 0.82, windowY, frontZ]} size={[1.05, 1.12]} opacity={frontAlpha} />
-          {level === 0 && <FrontDoor x={bb.x0 + 0.78} y={wallY - 0.36} z={frontZ + 0.012} opacity={frontAlpha} />}
+          {!revealInterior && (
+            <>
+              <FacadeWindow position={[bb.x0 + bb.w * 0.28, windowY, frontZ]} size={[1.18, 1.12]} opacity={frontAlpha} />
+              <FacadeWindow position={[bb.x0 + bb.w * 0.56, windowY, frontZ]} size={[1.18, 1.12]} opacity={frontAlpha} />
+              <FacadeWindow position={[bb.x0 + bb.w * 0.82, windowY, frontZ]} size={[1.05, 1.12]} opacity={frontAlpha} />
+              {level === 0 && <FrontDoor x={bb.x0 + 0.78} y={wallY - 0.36} z={frontZ + 0.012} opacity={frontAlpha} />}
+            </>
+          )}
           <FacadeWindow position={[rightX, windowY, bb.z0 + bb.d * 0.35]} size={[1.25, 1.02]} rotationY={Math.PI / 2} opacity={sideAlpha} />
           <FacadeWindow position={[rightX, windowY, bb.z0 + bb.d * 0.68]} size={[1.25, 1.02]} rotationY={Math.PI / 2} opacity={sideAlpha} />
           <FacadeWindow position={[bb.x0 + bb.w * 0.34, windowY, backZ]} size={[1.18, 1.08]} opacity={1} />
@@ -246,11 +251,11 @@ function InteriorWalls({ rooms, baseY }: { rooms: Room[]; baseY: number }) {
           <group key={`walls-${room.id}`}>
             <mesh position={[room.x + room.width / 2, y, room.z]} castShadow receiveShadow>
               <boxGeometry args={[room.width, 1.45, 0.07]} />
-              <meshStandardMaterial color="#f3eee4" roughness={0.72} transparent opacity={0.62} />
+              <meshStandardMaterial color="#fffdf7" roughness={0.7} />
             </mesh>
             <mesh position={[room.x, y, room.z + room.depth / 2]} castShadow receiveShadow>
               <boxGeometry args={[0.07, 1.45, room.depth]} />
-              <meshStandardMaterial color="#f3eee4" roughness={0.72} transparent opacity={0.62} />
+              <meshStandardMaterial color="#fffdf7" roughness={0.7} />
             </mesh>
           </group>
         )
