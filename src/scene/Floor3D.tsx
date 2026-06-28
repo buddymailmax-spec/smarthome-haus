@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Edges, Html } from '@react-three/drei'
+import { Edges, Html, RoundedBox } from '@react-three/drei'
 import type { Device, Room } from '../types'
 import { isClimate } from '../types'
 import { useHouse } from '../state/houseStore'
@@ -26,24 +26,18 @@ export function Floor3D({ level, rooms, devices, isTop }: Props) {
   const { select, selectedId, hovered, setHovered } = useHouse()
   const bb = useMemo(() => bbox(rooms), [rooms])
   const baseY = level * FLOOR_H
+  const wallH = isTop ? FLOOR_H * 0.72 : FLOOR_H
+  const wallY = baseY + wallH / 2 + 0.12
 
   return (
     <group>
       {/* Floor slab */}
-      <mesh position={[bb.cx, baseY + 0.06, bb.cz]} receiveShadow>
-        <boxGeometry args={[bb.w + 0.12, 0.12, bb.d + 0.12]} />
-        <meshStandardMaterial color="#f4f8fc" roughness={0.85} />
-        <Edges threshold={15} color="#c3d4e6" />
-      </mesh>
+      <RoundedBox position={[bb.cx, baseY + 0.07, bb.cz]} args={[bb.w + 0.32, 0.14, bb.d + 0.32]} radius={0.03} smoothness={2} receiveShadow>
+        <meshStandardMaterial color="#f5f0e8" roughness={0.9} />
+        <Edges threshold={15} color="#cbbfae" />
+      </RoundedBox>
 
-      {/* Glass shell (not on the attic — the roof replaces it) */}
-      {!isTop && (
-        <mesh position={[bb.cx, baseY + FLOOR_H / 2 + 0.12, bb.cz]}>
-          <boxGeometry args={[bb.w, FLOOR_H, bb.d]} />
-          <meshStandardMaterial color="#ffffff" transparent opacity={0.06} depthWrite={false} roughness={0.1} />
-          <Edges threshold={15} color="#b7cde2" />
-        </mesh>
-      )}
+      <ExteriorWalls bb={bb} wallY={wallY} wallH={wallH} isTop={!!isTop} />
 
       {/* Per-room colored floor pad + label */}
       {rooms.map((room) => {
@@ -91,6 +85,93 @@ export function Floor3D({ level, rooms, devices, isTop }: Props) {
         return <AirConditioner3D key={d.id} device={d} room={room} />
       })}
 
+    </group>
+  )
+}
+
+function ExteriorWalls({
+  bb,
+  wallY,
+  wallH,
+  isTop,
+}: {
+  bb: ReturnType<typeof bbox>
+  wallY: number
+  wallH: number
+  isTop: boolean
+}) {
+  const t = 0.16
+  const color = isTop ? '#fff9f0' : '#fffdf8'
+  const edge = '#d6d0c6'
+  const windowY = wallY + wallH * 0.08
+
+  return (
+    <group>
+      <mesh position={[bb.cx, wallY, bb.z0 - t / 2]} castShadow receiveShadow>
+        <boxGeometry args={[bb.w + t, wallH, t]} />
+        <meshStandardMaterial color={color} roughness={0.64} metalness={0.02} />
+        <Edges threshold={18} color={edge} />
+      </mesh>
+      <mesh position={[bb.cx, wallY, bb.z1 + t / 2]} castShadow receiveShadow>
+        <boxGeometry args={[bb.w + t, wallH, t]} />
+        <meshStandardMaterial color={color} roughness={0.64} metalness={0.02} transparent opacity={0.72} />
+        <Edges threshold={18} color={edge} />
+      </mesh>
+      <mesh position={[bb.x0 - t / 2, wallY, bb.cz]} castShadow receiveShadow>
+        <boxGeometry args={[t, wallH, bb.d + t]} />
+        <meshStandardMaterial color={color} roughness={0.64} metalness={0.02} />
+        <Edges threshold={18} color={edge} />
+      </mesh>
+      <mesh position={[bb.x1 + t / 2, wallY, bb.cz]} castShadow receiveShadow>
+        <boxGeometry args={[t, wallH, bb.d + t]} />
+        <meshStandardMaterial color={color} roughness={0.64} metalness={0.02} transparent opacity={0.82} />
+        <Edges threshold={18} color={edge} />
+      </mesh>
+
+      <WindowRow count={Math.max(2, Math.round(bb.w / 3))} start={bb.x0} length={bb.w} fixed="z" value={bb.z1 + t + 0.006} y={windowY} />
+      <WindowRow count={Math.max(1, Math.round(bb.d / 3))} start={bb.z0} length={bb.d} fixed="x" value={bb.x1 + t + 0.006} y={windowY} />
+    </group>
+  )
+}
+
+function WindowRow({
+  count,
+  start,
+  length,
+  fixed,
+  value,
+  y,
+}: {
+  count: number
+  start: number
+  length: number
+  fixed: 'x' | 'z'
+  value: number
+  y: number
+}) {
+  return (
+    <group>
+      {Array.from({ length: count }, (_, i) => {
+        const pos = start + ((i + 1) * length) / (count + 1)
+        const position: [number, number, number] = fixed === 'z' ? [pos, y, value] : [value, y, pos]
+        const rotation: [number, number, number] = fixed === 'z' ? [0, 0, 0] : [0, Math.PI / 2, 0]
+        return (
+          <group key={`${fixed}-${i}`} position={position} rotation={rotation}>
+            <mesh>
+              <boxGeometry args={[0.82, 0.82, 0.018]} />
+              <meshStandardMaterial color="#9fc7e6" roughness={0.18} metalness={0.05} transparent opacity={0.72} />
+            </mesh>
+            <mesh position={[0, 0, 0.012]}>
+              <boxGeometry args={[0.92, 0.08, 0.02]} />
+              <meshStandardMaterial color="#f9fbfd" roughness={0.4} />
+            </mesh>
+            <mesh position={[0, 0, 0.014]}>
+              <boxGeometry args={[0.08, 0.92, 0.02]} />
+              <meshStandardMaterial color="#f9fbfd" roughness={0.4} />
+            </mesh>
+          </group>
+        )
+      })}
     </group>
   )
 }

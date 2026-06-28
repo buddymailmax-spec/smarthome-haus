@@ -15,7 +15,7 @@ const inputCls =
   'w-full rounded-lg bg-[var(--color-sky-2)] px-3 py-1.5 text-[var(--color-ink)] outline-none ring-1 ring-[var(--color-line)] focus:ring-2 focus:ring-[var(--color-accent)]'
 
 export function Inspector() {
-  const { house, selectedId, view, daikin, applyClimate, bindDevice, toggleSimple, updateRoom, removeRoom } = useHouse()
+  const { house, selectedId, view, daikin, applyClimate, bindDevice, assignDeviceRoom, renameDevice, toggleSimple, updateRoom, removeRoom } = useHouse()
 
   const device = house.devices.find((d) => d.id === selectedId)
   const room = house.rooms.find((r) => r.id === selectedId)
@@ -47,6 +47,21 @@ export function Inspector() {
           >
             {s.power ? 'An' : 'Aus'}
           </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-white/65 p-3 ring-1 ring-[var(--color-line)]">
+          <Field label="Name">
+            <input value={device.name} onChange={(e) => renameDevice(device.id, e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Raum">
+            <select value={device.roomId} onChange={(e) => assignDeviceRoom(device.id, e.target.value)} className={inputCls}>
+              {house.rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </Field>
         </div>
 
         {/* Target temperature */}

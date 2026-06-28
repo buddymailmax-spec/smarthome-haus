@@ -26,8 +26,8 @@
   body {
     font-family: var(--font-sans);
     background:
-      radial-gradient(1200px 700px at 75% -10%, #ffffff 0%, transparent 55%),
-      linear-gradient(180deg, var(--color-sky-1) 0%, var(--color-sky-2) 60%, #ffffff 100%);
+      radial-gradient(900px 620px at 72% -12%, #ffffff 0%, transparent 56%),
+      linear-gradient(180deg, #cbe8fb 0%, #eef6fd 58%, #f6fbf4 100%);
     background-attachment: fixed;
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
@@ -40,4 +40,34 @@
   backdrop-filter: blur(14px);
   border: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
   box-shadow: 0 10px 30px -18px rgba(31, 64, 104, 0.45);
+}
+
+.panel-pop {
+  animation: panel-pop 420ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.modal-pop {
+  animation: modal-pop 220ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+@keyframes panel-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

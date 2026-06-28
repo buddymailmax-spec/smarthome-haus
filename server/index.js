@@ -49,13 +49,19 @@ try {
   console.warn('Token-Datei nicht lesbar:', e.message)
 }
 function saveTokens(t) {
-  tokens = { access_token: t.access_token, refresh_token: t.refresh_token, expires_at: Date.now() + (t.expires_in - 60) * 1000 }
+  fs.mkdirSync(DATA_DIR, { recursive: true })
+  tokens = {
+    access_token: t.access_token,
+    refresh_token: t.refresh_token || tokens?.refresh_token,
+    expires_at: Date.now() + (t.expires_in - 60) * 1000,
+  }
   fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens), 'utf8')
 }
 
 async function accessToken() {
   if (!tokens) throw new Error('not_connected')
   if (Date.now() < tokens.expires_at) return tokens.access_token
+  if (!tokens.refresh_token) throw new Error('refresh_token_missing')
   const refreshed = await refreshToken({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, refreshToken: tokens.refresh_token })
   saveTokens(refreshed)
   return tokens.access_token
