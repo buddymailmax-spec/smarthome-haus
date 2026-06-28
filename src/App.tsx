@@ -112,29 +112,149 @@ export default function App() {
 }
 
 function SettingsModal({ onClose }: { onClose: () => void }) {
+  const house = useHouse((s) => s.house)
+  const climates = house.devices.filter(isClimate)
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-[rgba(27,42,58,0.34)] p-4 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[rgba(27,42,58,0.42)] p-4 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="modal-pop max-h-[86vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-[var(--color-line)]"
+        className="modal-pop flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-[var(--color-line)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line)] px-7 py-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">System</p>
-            <h2 className="mt-1 text-lg font-semibold text-[var(--color-ink)]">Einstellungen</h2>
+            <h2 className="mt-0.5 text-2xl font-semibold text-[var(--color-ink)]">Einstellungen</h2>
           </div>
           <button
             onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-sky-2)] text-xl leading-none text-[var(--color-muted)] ring-1 ring-[var(--color-line)] transition hover:text-[var(--color-ink)]"
+            className="grid h-10 w-10 place-items-center rounded-full bg-[var(--color-sky-2)] text-2xl leading-none text-[var(--color-muted)] ring-1 ring-[var(--color-line)] transition hover:text-[var(--color-ink)]"
             aria-label="Schließen"
           >
             ×
           </button>
         </div>
-        <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-          <Inspector />
-          <DaikinPanel />
+
+        <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto p-7 lg:grid-cols-[1.55fr_1fr]">
+          <section>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted)]">Klimaanlagen</h3>
+              <span className="text-xs text-[var(--color-muted)]">{climates.length} Geräte</span>
+            </div>
+            <div className="space-y-3">
+              {climates.length === 0 ? (
+                <p className="rounded-2xl bg-[var(--color-sky-2)] p-4 text-sm text-[var(--color-muted)] ring-1 ring-[var(--color-line)]">
+                  Keine Klimaanlagen vorhanden.
+                </p>
+              ) : (
+                climates.map((d) => <ClimateCard key={d.id} device={d} />)
+              )}
+            </div>
+          </section>
+
+          <section className="space-y-5">
+            <DaikinPanel />
+            <Inspector />
+          </section>
         </div>
+      </div>
+    </div>
+  )
+}
+
+/** Self-contained climate card for the settings list: works in mock mode too. */
+function ClimateCard({ device }: { device: ClimateDevice }) {
+  const { house, daikin, renameDevice, assignDeviceRoom, bindDevice, applyClimate } = useHouse()
+  const s = device.state
+  const room = house.rooms.find((r) => r.id === device.roomId)
+  const live = device.binding?.adapter === 'onecta'
+  const fieldCls =
+    'w-full rounded-lg bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none ring-1 ring-[var(--color-line)] focus:ring-2 focus:ring-[var(--color-accent)]'
+
+  return (
+    <div className="rounded-2xl bg-[var(--color-sky-2)] p-4 ring-1 ring-[var(--color-line)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-[var(--color-ink)]">{device.name}</p>
+          <p className="text-xs text-[var(--color-muted)]">
+            {room?.name ?? 'Kein Raum'} · {s.current.toFixed(1)}° aktuell ·{' '}
+            <span className={live ? 'text-[var(--color-mint)]' : ''}>{live ? 'Live verbunden' : 'Mock'}</span>
+          </p>
+        </div>
+        <button
+          onClick={() => applyClimate(device.id, { power: !s.power })}
+          className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+            s.power ? 'bg-[var(--color-accent)] text-white' : 'bg-white text-[var(--color-muted)] ring-1 ring-[var(--color-line)]'
+          }`}
+        >
+          {s.power ? 'An' : 'Aus'}
+        </button>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => applyClimate(device.id, { target: Math.max(16, s.target - 0.5) })}
+            className="h-9 w-9 rounded-full bg-white text-xl leading-none text-[var(--color-ink)] ring-1 ring-[var(--color-line)] transition hover:-translate-y-0.5"
+          >
+            −
+          </button>
+          <div className="min-w-16 text-center">
+            <div className="text-2xl font-bold tabular-nums text-[var(--color-ink)]">{s.target.toFixed(1)}°</div>
+            <div className="text-[10px] uppercase tracking-wide text-[var(--color-muted)]">Ziel</div>
+          </div>
+          <button
+            onClick={() => applyClimate(device.id, { target: Math.min(30, s.target + 0.5) })}
+            className="h-9 w-9 rounded-full bg-white text-xl leading-none text-[var(--color-ink)] ring-1 ring-[var(--color-line)] transition hover:-translate-y-0.5"
+          >
+            +
+          </button>
+        </div>
+        <div className="grid flex-1 grid-cols-5 gap-1">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => applyClimate(device.id, { mode: m.id })}
+              className={`rounded-lg py-1.5 text-[10px] font-semibold transition ${
+                s.mode === m.id ? 'bg-[var(--color-accent)] text-white' : 'bg-white text-[var(--color-muted)] ring-1 ring-[var(--color-line)]'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <label className="block">
+          <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--color-muted)]">Name</span>
+          <input value={device.name} onChange={(e) => renameDevice(device.id, e.target.value)} className={fieldCls} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--color-muted)]">Raum</span>
+          <select value={device.roomId} onChange={(e) => assignDeviceRoom(device.id, e.target.value)} className={fieldCls}>
+            {house.rooms.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--color-muted)]">Daikin-Gerät</span>
+          <select
+            value={live ? device.binding!.unitId : ''}
+            onChange={(e) => bindDevice(device.id, e.target.value || null)}
+            disabled={!daikin.connected}
+            className={`${fieldCls} disabled:opacity-60`}
+          >
+            <option value="">Mock / nicht verbunden</option>
+            {daikin.units.map((u) => (
+              <option key={u.unitId} value={u.unitId}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </div>
   )
