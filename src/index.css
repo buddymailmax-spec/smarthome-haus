@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #0b1020;
+  --color-panel: #11182e;
+  --color-panel-2: #161f3a;
+  --color-line: #25304f;
+  --color-accent: #5b8cff;
+  --color-accent-warm: #ff8a5b;
+  --color-mint: #4fd1c5;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: radial-gradient(1200px 800px at 70% -10%, #1a2342 0%, #0b1020 55%);
+    color: #e6ebff;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Subtle glass panel utility */
+.glass {
+  background: color-mix(in oklab, var(--color-panel) 80%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
+}

@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/inspector.tsx","./src/daikin/adapter.ts","./src/data/samplehouse.ts","./src/lib/supabase.ts","./src/scene/devicemarker.tsx","./src/scene/house3d.tsx","./src/scene/room3d.tsx","./src/state/housestore.ts"],"version":"5.9.3"}
