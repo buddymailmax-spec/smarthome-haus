@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, ContactShadows, SoftShadows, Bounds } from '@react-three/drei'
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useHouse } from '../state/houseStore'
 import { Floor3D } from './Floor3D'
@@ -103,7 +103,20 @@ function SmoothCamera({ revealInterior, center }: { revealInterior: boolean; cen
   const exteriorTarget = useMemo(() => new THREE.Vector3(center[0], FLOOR_H * 1.2, center[1]), [center])
   const interiorTarget = useMemo(() => new THREE.Vector3(center[0], FLOOR_H * 1.25, center[1]), [center])
 
+  // Only glide the camera while a view transition is in progress. Once it has
+  // settled (or the user grabs the controls), we stop driving it so orbit / zoom
+  // stay fully under the user's control instead of snapping back every frame.
+  const animating = useRef(true)
+  const prevReveal = useRef(revealInterior)
+  useEffect(() => {
+    if (prevReveal.current !== revealInterior) {
+      prevReveal.current = revealInterior
+      animating.current = true
+    }
+  }, [revealInterior])
+
   useFrame((_, dt) => {
+    if (!animating.current) return
     const targetPos = revealInterior ? interiorPos : exteriorPos
     const targetLook = revealInterior ? interiorTarget : exteriorTarget
     const k = 1 - Math.exp(-dt * 3.2)
@@ -116,6 +129,8 @@ function SmoothCamera({ revealInterior, center }: { revealInterior: boolean; cen
       controls.current.target.lerp(targetLook, k)
       controls.current.update()
     }
+    // Close enough → hand control back to the user.
+    if (camera.position.distanceTo(targetPos) < 0.2) animating.current = false
   })
 
   return (
@@ -124,9 +139,11 @@ function SmoothCamera({ revealInterior, center }: { revealInterior: boolean; cen
       makeDefault
       target={exteriorTarget}
       enablePan
-      minDistance={6}
-      maxDistance={48}
-      maxPolarAngle={Math.PI / 2.05}
+      // The moment the user interacts, stop any ongoing glide so we never fight input.
+      onStart={() => { animating.current = false }}
+      minDistance={4}
+      maxDistance={90}
+      maxPolarAngle={Math.PI / 2.02}
     />
   )
 }
