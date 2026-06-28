@@ -45,6 +45,7 @@ interface HouseState {
 let roomCounter = 100
 
 type ClimateStatePatch = Partial<{ power: boolean; mode: ClimateMode; target: number; current: number; fan: number }>
+type PersistedHouseState = Partial<Pick<HouseState, 'house' | 'view'>>
 
 // Local-only patch of a climate device's state (used for optimistic UI + polling).
 function patchLocal(s: HouseState, deviceId: string, patch: ClimateStatePatch): House {
@@ -54,6 +55,13 @@ function patchLocal(s: HouseState, deviceId: string, patch: ClimateStatePatch): 
       if (d.id !== deviceId || !isClimate(d)) return d
       return { ...d, state: { ...d.state, ...patch } }
     }),
+  }
+}
+
+function normalizeHouse(house: House): House {
+  return {
+    ...house,
+    rooms: house.rooms.map((r) => (r.id === 'dg-dach' ? { ...r, x: 0, z: 0, width: 9, depth: 6 } : r)),
   }
 }
 
@@ -183,7 +191,12 @@ export const useHouse = create<HouseState>()(
       name: 'smarthome-haus-state',
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ house: s.house, view: s.view }),
-      version: 1,
+      version: 2,
+      migrate: (persisted) => {
+        const state = persisted as PersistedHouseState
+        if (!state.house) return persisted
+        return { ...state, house: normalizeHouse(state.house) }
+      },
     },
   ),
 )

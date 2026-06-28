@@ -16,7 +16,7 @@ export const sampleHouse: House = {
     { id: 'og-kind', name: 'Kinderzimmer', level: 1, x: 3, z: 0, width: 3, depth: 6, height: 2.8, color: '#f0a85c' },
     { id: 'og-buero', name: 'Büro', level: 1, x: 6, z: 0, width: 3, depth: 6, height: 2.8, color: '#5ca8f0' },
     // Dachboden
-    { id: 'dg-dach', name: 'Dachboden', level: 2, x: 1.5, z: 0.5, width: 6, depth: 5, height: 2.4, color: '#8fa4bd' },
+    { id: 'dg-dach', name: 'Dachboden', level: 2, x: 0, z: 0, width: 9, depth: 6, height: 2.4, color: '#8fa4bd' },
   ],
   devices: [
     {
