@@ -68,7 +68,8 @@ export const useHouse = create<HouseState>((set, get) => ({
   addRoom: () =>
     set((s) => {
       const id = `r-new-${roomCounter++}`
-      const newRoom: Room = { id, name: 'Neuer Raum', x: 0, z: -5, width: 4, depth: 4, height: 2.7, color: '#5b8cff' }
+      // New rooms land on the ground floor by default; change the storey in the editor.
+      const newRoom: Room = { id, name: 'Neuer Raum', level: 0, x: 0, z: -5, width: 4, depth: 4, height: 2.8, color: '#7fb2f0' }
       return { house: { ...s.house, rooms: [...s.house.rooms, newRoom] }, selectedId: id }
     }),
 

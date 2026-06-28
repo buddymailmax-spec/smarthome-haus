@@ -21,12 +21,12 @@ export default function App() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-accent)] text-[#0b1020]">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-accent)] text-white shadow-sm">
             <HomeIcon />
           </div>
           <div>
-            <h1 className="text-lg font-semibold leading-tight">{house.name}</h1>
-            <p className="text-xs text-slate-400">
+            <h1 className="text-lg font-semibold leading-tight text-[var(--color-ink)]">{house.name}</h1>
+            <p className="text-xs text-[var(--color-muted)]">
               {house.rooms.length} Räume · {climates.length} Klimaanlagen
             </p>
           </div>
@@ -35,7 +35,7 @@ export default function App() {
         <div className="flex items-center gap-2">
           <Stat label="Ø Temperatur" value={`${avgTemp}°`} />
           <Stat label="Aktiv" value={`${activeClimates}/${climates.length}`} />
-          <div className="ml-2 flex rounded-xl bg-[var(--color-panel-2)] p-1">
+          <div className="ml-2 flex rounded-xl bg-white/70 p-1 shadow-sm ring-1 ring-[var(--color-line)]">
             <Seg active={view === 'view'} onClick={() => setView('view')}>
               Ansicht
             </Seg>
@@ -54,13 +54,13 @@ export default function App() {
           {view === 'edit' && (
             <button
               onClick={addRoom}
-              className="absolute bottom-5 left-5 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[#0b1020] shadow-lg shadow-[var(--color-accent)]/30 transition hover:brightness-110"
+              className="absolute bottom-5 left-5 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[var(--color-accent)]/30 transition hover:brightness-105"
             >
               + Raum hinzufügen
             </button>
           )}
           {view === 'view' && (
-            <div className="pointer-events-none absolute bottom-5 right-5 rounded-lg bg-[var(--color-panel)]/70 px-3 py-1.5 text-[11px] text-slate-400 backdrop-blur">
+            <div className="pointer-events-none absolute bottom-5 right-5 rounded-lg bg-white/70 px-3 py-1.5 text-[11px] text-[var(--color-muted)] backdrop-blur">
               Ziehen zum Drehen · Scrollen zum Zoomen
             </div>
           )}
@@ -79,8 +79,8 @@ export default function App() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="glass rounded-xl px-3.5 py-1.5 text-right">
-      <div className="text-sm font-semibold tabular-nums">{value}</div>
-      <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-sm font-semibold tabular-nums text-[var(--color-ink)]">{value}</div>
+      <div className="text-[10px] uppercase tracking-wide text-[var(--color-muted)]">{label}</div>
     </div>
   )
 }
@@ -90,7 +90,7 @@ function Seg({ active, onClick, children }: { active: boolean; onClick: () => vo
     <button
       onClick={onClick}
       className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-        active ? 'bg-[var(--color-accent)] text-[#0b1020]' : 'text-slate-400 hover:text-slate-200'
+        active ? 'bg-[var(--color-accent)] text-white shadow-sm' : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]'
       }`}
     >
       {children}

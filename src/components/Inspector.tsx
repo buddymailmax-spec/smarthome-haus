@@ -1,6 +1,7 @@
 import type { ClimateMode } from '../types'
 import { isClimate } from '../types'
 import { useHouse } from '../state/houseStore'
+import { LEVEL_NAMES } from '../scene/constants'
 
 const MODES: { id: ClimateMode; label: string; icon: string }[] = [
   { id: 'cool', label: 'Kühlen', icon: '❄️' },
@@ -10,6 +11,9 @@ const MODES: { id: ClimateMode; label: string; icon: string }[] = [
   { id: 'auto', label: 'Auto', icon: '✨' },
 ]
 
+const inputCls =
+  'w-full rounded-lg bg-[var(--color-sky-2)] px-3 py-1.5 text-[var(--color-ink)] outline-none ring-1 ring-[var(--color-line)] focus:ring-2 focus:ring-[var(--color-accent)]'
+
 export function Inspector() {
   const { house, selectedId, view, daikin, applyClimate, bindDevice, toggleSimple, updateRoom, removeRoom } = useHouse()
 
@@ -18,11 +22,9 @@ export function Inspector() {
 
   if (!device && !room) {
     return (
-      <div className="glass rounded-2xl p-5 text-sm text-slate-400">
-        <p className="font-medium text-slate-200">Nichts ausgewählt</p>
-        <p className="mt-1 leading-relaxed">
-          Klick auf einen Raum oder ein leuchtendes Gerät im Haus, um es zu steuern.
-        </p>
+      <div className="glass rounded-2xl p-5 text-sm text-[var(--color-muted)]">
+        <p className="font-medium text-[var(--color-ink)]">Nichts ausgewählt</p>
+        <p className="mt-1 leading-relaxed">Klick auf einen Raum oder eine Klimaanlage im Haus, um sie zu steuern.</p>
       </div>
     )
   }
@@ -34,34 +36,34 @@ export function Inspector() {
       <div className="glass rounded-2xl p-5">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold">{device.name}</h2>
-            <p className="text-xs text-slate-400">Klimaanlage · {s.current.toFixed(1)}° aktuell</p>
+            <h2 className="text-base font-semibold text-[var(--color-ink)]">{device.name}</h2>
+            <p className="text-xs text-[var(--color-muted)]">Klimaanlage · {s.current.toFixed(1)}° aktuell</p>
           </div>
           <button
             onClick={() => applyClimate(device.id, { power: !s.power })}
             className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-              s.power ? 'bg-[var(--color-accent)] text-[#0b1020]' : 'bg-[var(--color-panel-2)] text-slate-400'
+              s.power ? 'bg-[var(--color-accent)] text-white' : 'bg-[var(--color-sky-2)] text-[var(--color-muted)] ring-1 ring-[var(--color-line)]'
             }`}
           >
             {s.power ? 'An' : 'Aus'}
           </button>
         </div>
 
-        {/* Target temperature dial */}
+        {/* Target temperature */}
         <div className="mt-5 flex items-center justify-center gap-5">
           <button
             onClick={() => applyClimate(device.id, { target: Math.max(16, s.target - 0.5) })}
-            className="h-10 w-10 rounded-full bg-[var(--color-panel-2)] text-xl leading-none hover:bg-[var(--color-line)]"
+            className="h-10 w-10 rounded-full bg-[var(--color-sky-2)] text-xl leading-none text-[var(--color-ink)] ring-1 ring-[var(--color-line)] hover:bg-white"
           >
             −
           </button>
           <div className="text-center">
-            <div className="text-4xl font-bold tabular-nums">{s.target.toFixed(1)}°</div>
-            <div className="text-[11px] uppercase tracking-wide text-slate-400">Ziel</div>
+            <div className="text-4xl font-bold tabular-nums text-[var(--color-ink)]">{s.target.toFixed(1)}°</div>
+            <div className="text-[11px] uppercase tracking-wide text-[var(--color-muted)]">Ziel</div>
           </div>
           <button
             onClick={() => applyClimate(device.id, { target: Math.min(30, s.target + 0.5) })}
-            className="h-10 w-10 rounded-full bg-[var(--color-panel-2)] text-xl leading-none hover:bg-[var(--color-line)]"
+            className="h-10 w-10 rounded-full bg-[var(--color-sky-2)] text-xl leading-none text-[var(--color-ink)] ring-1 ring-[var(--color-line)] hover:bg-white"
           >
             +
           </button>
@@ -74,7 +76,9 @@ export function Inspector() {
               key={m.id}
               onClick={() => applyClimate(device.id, { mode: m.id })}
               className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[11px] transition ${
-                s.mode === m.id ? 'bg-[var(--color-accent)] text-[#0b1020]' : 'bg-[var(--color-panel-2)] text-slate-300'
+                s.mode === m.id
+                  ? 'bg-[var(--color-accent)] text-white'
+                  : 'bg-[var(--color-sky-2)] text-[var(--color-muted)] ring-1 ring-[var(--color-line)]'
               }`}
             >
               <span className="text-base">{m.icon}</span>
@@ -85,7 +89,7 @@ export function Inspector() {
 
         {/* Fan */}
         <div className="mt-5">
-          <div className="mb-1.5 flex justify-between text-xs text-slate-400">
+          <div className="mb-1.5 flex justify-between text-xs text-[var(--color-muted)]">
             <span>Lüfter</span>
             <span>{s.fan === 0 ? 'Auto' : `Stufe ${s.fan}`}</span>
           </div>
@@ -101,23 +105,23 @@ export function Inspector() {
         </div>
 
         {/* Daikin binding */}
-        <div className="mt-4 rounded-lg bg-[var(--color-panel-2)] px-3 py-2.5">
+        <div className="mt-4 rounded-lg bg-[var(--color-sky-2)] px-3 py-2.5 ring-1 ring-[var(--color-line)]">
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-wide text-slate-400">Daikin-Gerät</span>
+            <span className="text-[11px] uppercase tracking-wide text-[var(--color-muted)]">Daikin-Gerät</span>
             {device.binding?.adapter === 'onecta' ? (
               <span className="flex items-center gap-1 text-[11px] font-medium text-[var(--color-mint)]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-mint)]" />
                 {daikin.busy === device.id ? 'sendet…' : 'live'}
               </span>
             ) : (
-              <span className="text-[11px] text-slate-500">Mock</span>
+              <span className="text-[11px] text-[var(--color-muted)]">Mock</span>
             )}
           </div>
           {daikin.connected ? (
             <select
               value={device.binding?.adapter === 'onecta' ? device.binding.unitId : ''}
               onChange={(e) => bindDevice(device.id, e.target.value || null)}
-              className="w-full rounded-md bg-[var(--color-panel)] px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+              className="w-full rounded-md bg-white px-2.5 py-1.5 text-sm text-[var(--color-ink)] outline-none ring-1 ring-[var(--color-line)] focus:ring-2 focus:ring-[var(--color-accent)]"
             >
               <option value="">— Mock (nicht verbunden) —</option>
               {daikin.units.map((u) => (
@@ -127,7 +131,7 @@ export function Inspector() {
               ))}
             </select>
           ) : (
-            <p className="text-[11px] leading-relaxed text-slate-400">
+            <p className="text-[11px] leading-relaxed text-[var(--color-muted)]">
               Mock-Modus. Verbinde Daikin unten, um diese Anlage einem echten Gerät zuzuordnen.
             </p>
           )}
@@ -141,10 +145,10 @@ export function Inspector() {
     const on = !!device.state.on
     return (
       <div className="glass rounded-2xl p-5">
-        <h2 className="text-base font-semibold">{device.name}</h2>
-        <p className="text-xs capitalize text-slate-400">{device.kind}</p>
+        <h2 className="text-base font-semibold text-[var(--color-ink)]">{device.name}</h2>
+        <p className="text-xs capitalize text-[var(--color-muted)]">{device.kind}</p>
         {device.kind === 'sensor' ? (
-          <div className="mt-4 text-3xl font-bold tabular-nums">
+          <div className="mt-4 text-3xl font-bold tabular-nums text-[var(--color-ink)]">
             {device.state.value}
             {device.state.unit}
           </div>
@@ -152,7 +156,7 @@ export function Inspector() {
           <button
             onClick={() => toggleSimple(device.id)}
             className={`mt-4 w-full rounded-xl py-2.5 text-sm font-semibold transition ${
-              on ? 'bg-[var(--color-mint)] text-[#0b1020]' : 'bg-[var(--color-panel-2)] text-slate-400'
+              on ? 'bg-[var(--color-mint)] text-white' : 'bg-[var(--color-sky-2)] text-[var(--color-muted)] ring-1 ring-[var(--color-line)]'
             }`}
           >
             {on ? 'Eingeschaltet' : 'Ausgeschaltet'}
@@ -166,17 +170,28 @@ export function Inspector() {
   if (room) {
     return (
       <div className="glass rounded-2xl p-5">
-        <h2 className="text-base font-semibold">{room.name}</h2>
-        <p className="text-xs text-slate-400">Raum · {(room.width * room.depth).toFixed(1)} m²</p>
+        <h2 className="text-base font-semibold text-[var(--color-ink)]">{room.name}</h2>
+        <p className="text-xs text-[var(--color-muted)]">
+          {LEVEL_NAMES[room.level] ?? `Ebene ${room.level}`} · {(room.width * room.depth).toFixed(1)} m²
+        </p>
 
         {view === 'edit' ? (
           <div className="mt-4 space-y-3 text-sm">
             <Field label="Name">
-              <input
-                value={room.name}
-                onChange={(e) => updateRoom(room.id, { name: e.target.value })}
-                className="w-full rounded-lg bg-[var(--color-panel-2)] px-3 py-1.5 outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-              />
+              <input value={room.name} onChange={(e) => updateRoom(room.id, { name: e.target.value })} className={inputCls} />
+            </Field>
+            <Field label="Etage">
+              <select
+                value={room.level}
+                onChange={(e) => updateRoom(room.id, { level: Number(e.target.value) })}
+                className={inputCls}
+              >
+                {LEVEL_NAMES.map((name, i) => (
+                  <option key={i} value={i}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <NumField label="Breite (m)" value={room.width} onChange={(v) => updateRoom(room.id, { width: v })} />
@@ -189,19 +204,19 @@ export function Inspector() {
                 type="color"
                 value={room.color}
                 onChange={(e) => updateRoom(room.id, { color: e.target.value })}
-                className="h-9 w-full cursor-pointer rounded-lg bg-transparent"
+                className="h-9 w-full cursor-pointer rounded-lg bg-transparent ring-1 ring-[var(--color-line)]"
               />
             </Field>
             <button
               onClick={() => removeRoom(room.id)}
-              className="w-full rounded-lg bg-[var(--color-accent-warm)]/15 py-2 text-sm font-medium text-[var(--color-accent-warm)] hover:bg-[var(--color-accent-warm)]/25"
+              className="w-full rounded-lg bg-[var(--color-warm)]/12 py-2 text-sm font-medium text-[var(--color-warm)] hover:bg-[var(--color-warm)]/20"
             >
               Raum löschen
             </button>
           </div>
         ) : (
-          <p className="mt-3 text-xs leading-relaxed text-slate-400">
-            Wechsle in den <span className="text-slate-200">Bearbeiten</span>-Modus, um diesen Raum zu ändern.
+          <p className="mt-3 text-xs leading-relaxed text-[var(--color-muted)]">
+            Wechsle in den <span className="font-medium text-[var(--color-ink)]">Bearbeiten</span>-Modus, um diesen Raum zu ändern.
           </p>
         )}
       </div>
@@ -214,7 +229,7 @@ export function Inspector() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11px] uppercase tracking-wide text-slate-400">{label}</span>
+      <span className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--color-muted)]">{label}</span>
       {children}
     </label>
   )
@@ -233,13 +248,7 @@ function NumField({
 }) {
   return (
     <Field label={label}>
-      <input
-        type="number"
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full rounded-lg bg-[var(--color-panel-2)] px-3 py-1.5 outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-      />
+      <input type="number" step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className={inputCls} />
     </Field>
   )
 }

@@ -1,13 +1,17 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-ink: #0b1020;
-  --color-panel: #11182e;
-  --color-panel-2: #161f3a;
-  --color-line: #25304f;
-  --color-accent: #5b8cff;
-  --color-accent-warm: #ff8a5b;
-  --color-mint: #4fd1c5;
+  /* Light, airy "smart home app" palette */
+  --color-sky-1: #cfe8fb;
+  --color-sky-2: #eef6fd;
+  --color-ink: #1b2a3a;
+  --color-muted: #6b7c8f;
+  --color-card: #ffffff;
+  --color-line: #dbe7f2;
+  --color-accent: #2f7bf6;
+  --color-roof: #4f74a8;
+  --color-mint: #14b8a6;
+  --color-warm: #f0894b;
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -21,15 +25,19 @@
 
   body {
     font-family: var(--font-sans);
-    background: radial-gradient(1200px 800px at 70% -10%, #1a2342 0%, #0b1020 55%);
-    color: #e6ebff;
+    background:
+      radial-gradient(1200px 700px at 75% -10%, #ffffff 0%, transparent 55%),
+      linear-gradient(180deg, var(--color-sky-1) 0%, var(--color-sky-2) 60%, #ffffff 100%);
+    background-attachment: fixed;
+    color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
   }
 }
 
-/* Subtle glass panel utility */
+/* Frosted white card */
 .glass {
-  background: color-mix(in oklab, var(--color-panel) 80%, transparent);
+  background: color-mix(in oklab, var(--color-card) 78%, transparent);
   backdrop-filter: blur(14px);
-  border: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
+  box-shadow: 0 10px 30px -18px rgba(31, 64, 104, 0.45);
 }

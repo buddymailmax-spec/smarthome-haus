@@ -39,6 +39,8 @@ export type Device = ClimateDevice | SimpleDevice
 export interface Room {
   id: string
   name: string
+  /** Storey: 0 = Erdgeschoss, 1 = Obergeschoss, 2 = Dachboden. */
+  level: number
   /** Footprint rectangle in meters, top-down plan coordinates. */
   x: number
   z: number
