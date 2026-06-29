@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import type { ClimateMode, Device, House, Room } from '../types'
 import { isClimate } from '../types'
 import { sampleHouse } from '../data/sampleHouse'
-import { getAdapter, type ClimateCommand } from '../daikin/adapter'
+import { getAdapter, type ClimateCommand, type ClimateReading } from '../daikin/adapter'
 
 type ViewMode = 'view' | 'edit'
 
@@ -40,6 +40,8 @@ interface HouseState {
   refreshDaikinStatus: () => Promise<void>
   bindDevice: (deviceId: string, unitId: string | null) => void
   syncClimate: (deviceId: string) => Promise<void>
+  /** Re-read a bound unit a few times after a command so the UI converges to the real state. */
+  scheduleResync: (deviceId: string) => void
 }
 
 let roomCounter = 100
@@ -63,6 +65,39 @@ function normalizeHouse(house: House): House {
     ...house,
     rooms: house.rooms.map((r) => (r.id === 'dg-dach' ? { ...r, x: 0, z: 0, width: 9, depth: 6 } : r)),
   }
+}
+
+// Recently sent commands, kept until the device's own reading confirms them.
+// Without this, an eventually-consistent Daikin read taken seconds after a
+// command can report the old value and flicker the UI back.
+const pendingCommands = new Map<string, { cmd: ClimateCommand; until: number }>()
+
+function rememberCommand(deviceId: string, cmd: ClimateCommand) {
+  const prev = pendingCommands.get(deviceId)?.cmd ?? {}
+  pendingCommands.set(deviceId, { cmd: { ...prev, ...cmd }, until: Date.now() + 35_000 })
+}
+
+// Merge a fresh reading with any still-unconfirmed command: keep the commanded
+// fields until the device actually reports them, take everything else (e.g.
+// current temperature) straight from the reading.
+function reconcile(deviceId: string, reading: ClimateReading): ClimateStatePatch {
+  const pending = pendingCommands.get(deviceId)
+  if (!pending) return reading
+  if (Date.now() >= pending.until) {
+    pendingCommands.delete(deviceId)
+    return reading
+  }
+  const merged: ClimateStatePatch = { ...reading }
+  let allConfirmed = true
+  for (const key of Object.keys(pending.cmd) as (keyof ClimateCommand)[]) {
+    const want = pending.cmd[key]
+    if (want === undefined) continue
+    if (reading[key] === want) continue // device now reports our value
+    ;(merged as Record<string, unknown>)[key] = want // not applied yet -> keep intent
+    allConfirmed = false
+  }
+  if (allConfirmed) pendingCommands.delete(deviceId)
+  return merged
 }
 
 export const useHouse = create<HouseState>()(
@@ -128,13 +163,30 @@ export const useHouse = create<HouseState>()(
         const unitId = device.binding?.unitId
         if (!unitId) return // unbound -> mock/optimistic only
 
+        const isOnecta = device.binding?.adapter === 'onecta'
+        if (isOnecta) rememberCommand(deviceId, cmd)
+
         set((s) => ({ daikin: { ...s.daikin, busy: deviceId } }))
         try {
           const reading = await adapter.command(unitId, cmd)
-          set((s) => ({ house: patchLocal(s, deviceId, reading), daikin: { ...s.daikin, busy: null } }))
+          // Daikin's cloud is eventually consistent: a read right after a
+          // command can still report the OLD state. Trust the command we just
+          // sent for the fields we changed; take the rest (e.g. current temp)
+          // from the reading.
+          set((s) => ({ house: patchLocal(s, deviceId, { ...reading, ...cmd }), daikin: { ...s.daikin, busy: null } }))
+          // Then re-read a few times so the UI converges to the real settled state.
+          if (isOnecta) get().scheduleResync(deviceId)
         } catch (e) {
           console.error('Climate command failed:', e)
           set((s) => ({ daikin: { ...s.daikin, busy: null } }))
+        }
+      },
+
+      scheduleResync: (deviceId) => {
+        // Spread out so we catch the device once Daikin has applied the change,
+        // without hammering the rate-limited API.
+        for (const delay of [5000, 12000, 25000]) {
+          setTimeout(() => { get().syncClimate(deviceId) }, delay)
         }
       },
 
@@ -199,7 +251,7 @@ export const useHouse = create<HouseState>()(
         if (!device || !isClimate(device) || device.binding?.adapter !== 'onecta' || !device.binding.unitId) return
         try {
           const reading = await getAdapter('onecta').read(device.binding.unitId)
-          set((s) => ({ house: patchLocal(s, deviceId, reading) }))
+          set((s) => ({ house: patchLocal(s, deviceId, reconcile(deviceId, reading)) }))
         } catch (e) {
           console.error('Climate sync failed:', e)
         }
