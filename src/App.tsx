@@ -3,6 +3,7 @@ import { Inspector } from './components/Inspector'
 import { DaikinPanel } from './components/DaikinPanel'
 import { useHouse } from './state/houseStore'
 import { useDaikinSync } from './daikin/useDaikinSync'
+import { mergeUnitOptions } from './daikin/units'
 import type { ClimateDevice, ClimateMode } from './types'
 import { isClimate } from './types'
 import { useState } from 'react'
@@ -167,6 +168,7 @@ function ClimateCard({ device }: { device: ClimateDevice }) {
   const s = device.state
   const room = house.rooms.find((r) => r.id === device.roomId)
   const live = device.binding?.adapter === 'onecta'
+  const unitOptions = mergeUnitOptions(daikin.units, device.binding)
   const fieldCls =
     'w-full rounded-lg bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none ring-1 ring-[var(--color-line)] focus:ring-2 focus:ring-[var(--color-accent)]'
 
@@ -244,11 +246,11 @@ function ClimateCard({ device }: { device: ClimateDevice }) {
           <select
             value={live ? device.binding!.unitId : ''}
             onChange={(e) => bindDevice(device.id, e.target.value || null)}
-            disabled={!daikin.connected}
+            disabled={!daikin.connected && !live}
             className={`${fieldCls} disabled:opacity-60`}
           >
             <option value="">Mock / nicht verbunden</option>
-            {daikin.units.map((u) => (
+            {unitOptions.map((u) => (
               <option key={u.unitId} value={u.unitId}>
                 {u.name}
               </option>

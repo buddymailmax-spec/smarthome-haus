@@ -1,6 +1,7 @@
 import type { ClimateMode } from '../types'
 import { isClimate } from '../types'
 import { useHouse } from '../state/houseStore'
+import { mergeUnitOptions } from '../daikin/units'
 import { LEVEL_NAMES } from '../scene/constants'
 
 const MODES: { id: ClimateMode; label: string; icon: string }[] = [
@@ -136,14 +137,14 @@ export function Inspector({ embedded = false }: { embedded?: boolean } = {}) {
               <span className="text-[11px] text-[var(--color-muted)]">Mock</span>
             )}
           </div>
-          {daikin.connected ? (
+          {daikin.connected || device.binding?.adapter === 'onecta' ? (
             <select
               value={device.binding?.adapter === 'onecta' ? device.binding.unitId : ''}
               onChange={(e) => bindDevice(device.id, e.target.value || null)}
               className="w-full rounded-md bg-white px-2.5 py-1.5 text-sm text-[var(--color-ink)] outline-none ring-1 ring-[var(--color-line)] focus:ring-2 focus:ring-[var(--color-accent)]"
             >
               <option value="">— Mock (nicht verbunden) —</option>
-              {daikin.units.map((u) => (
+              {mergeUnitOptions(daikin.units, device.binding).map((u) => (
                 <option key={u.unitId} value={u.unitId}>
                   {u.name}
                 </option>

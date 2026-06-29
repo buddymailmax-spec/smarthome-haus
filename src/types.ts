@@ -16,7 +16,7 @@ export interface DeviceBase {
 export interface ClimateDevice extends DeviceBase {
   kind: 'climate'
   /** Daikin adapter binding — which backend + unit this maps to. */
-  binding?: { adapter: 'mock' | 'onecta' | 'local'; unitId: string }
+  binding?: { adapter: 'mock' | 'onecta' | 'local'; unitId: string; name?: string }
   state: {
     power: boolean
     mode: ClimateMode

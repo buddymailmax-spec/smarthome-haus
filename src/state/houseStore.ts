@@ -154,10 +154,23 @@ export const useHouse = create<HouseState>()(
           const r = await fetch('/api/daikin/auth/status')
           if (!r.ok) return
           const status = await r.json()
-          let units: { unitId: string; name: string }[] = []
+          // Keep the units we already have: a transient failure (Daikin rate
+          // limits are tight) must NOT wipe the list and make the user's
+          // bound anlagen disappear from the dropdown.
+          let units = get().daikin.units
           if (status.connected) {
-            const ru = await fetch('/api/daikin/units')
-            if (ru.ok) units = await ru.json()
+            try {
+              const ru = await fetch('/api/daikin/units')
+              if (ru.ok) {
+                const data = await ru.json()
+                if (Array.isArray(data) && data.length) units = data
+              }
+              // non-ok / empty -> keep previously loaded units
+            } catch {
+              // keep previously loaded units
+            }
+          } else {
+            units = [] // genuinely disconnected
           }
           set((s) => ({ daikin: { ...s.daikin, configured: !!status.configured, connected: !!status.connected, units } }))
         } catch {
@@ -166,15 +179,20 @@ export const useHouse = create<HouseState>()(
       },
 
       bindDevice: (deviceId, unitId) =>
-        set((s) => ({
-          house: {
-            ...s.house,
-            devices: s.house.devices.map((d): Device => {
-              if (d.id !== deviceId || !isClimate(d)) return d
-              return { ...d, binding: unitId ? { adapter: 'onecta', unitId } : { adapter: 'mock', unitId: d.id } }
-            }),
-          },
-        })),
+        set((s) => {
+          // Remember the unit's display name so the dropdown can still show it
+          // even when the live unit list hasn't (re)loaded.
+          const name = s.daikin.units.find((u) => u.unitId === unitId)?.name
+          return {
+            house: {
+              ...s.house,
+              devices: s.house.devices.map((d): Device => {
+                if (d.id !== deviceId || !isClimate(d)) return d
+                return { ...d, binding: unitId ? { adapter: 'onecta', unitId, name } : { adapter: 'mock', unitId: d.id } }
+              }),
+            },
+          }
+        }),
 
       syncClimate: async (deviceId) => {
         const device = get().house.devices.find((d) => d.id === deviceId)
